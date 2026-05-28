@@ -22,7 +22,7 @@ export function useGenerate() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenerateResult | null>(null);
 
-  const generate = async (params: GenerateParams): Promise<GenerateResult | null> {
+  const generate = async (params: GenerateParams): Promise<GenerateResult | null> => {
     setLoading(true);
     try {
       const response = await fetch('/api/generate', {
