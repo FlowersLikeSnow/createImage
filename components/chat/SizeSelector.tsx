@@ -47,6 +47,7 @@ export function SizeSelector({ value, onChange }: SizeSelectorProps) {
             borderRadius: '20px 0 0 20px',
           }
         }}
+                    variant="filled" 
       />
       <Select
         value={selectedSize}
@@ -65,6 +66,7 @@ export function SizeSelector({ value, onChange }: SizeSelectorProps) {
           }
         }}
         showSearch
+                    variant="filled" 
       />
     </Space.Compact>
   );

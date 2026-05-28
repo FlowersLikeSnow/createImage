@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Conversations, Sender, Bubble } from '@ant-design/x';
-import { Button, Image, Spin, Space, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNumber } from 'antd';
+import { Sender, Bubble } from '@ant-design/x';
+import { Button, Image, Spin, Space, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNumber, Menu } from 'antd';
 import { PlusOutlined, DownloadOutlined, ReloadOutlined, AntDesignOutlined, ApiOutlined, OpenAIOutlined, PaperClipOutlined, ProfileOutlined } from '@ant-design/icons';
 import { useGenerate } from '@/hooks/useGenerate';
 import type { Message, Conversation } from '@/types/conversation';
@@ -19,6 +19,7 @@ const mockConversations: Conversation[] = [
 export function ChatContainer() {
   const { loading, generate } = useGenerate();
   const [numImages, setNumImages] = useState(1);
+  const [keepPrompt, setKeepPrompt] = useState(true);
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
   const [imageSize, setImageSize] = useState(DEFAULT_IMAGE_SIZE);
@@ -201,11 +202,13 @@ export function ChatContainer() {
     <div className="flex h-screen">
       {/* 左侧对话列表 */}
       <div className="w-[160px] bg-[#F3F5F7] flex flex-col">
-        <Conversations
+        <Menu
+          mode="inline"
+          selectedKeys={[activeConversation || '']}
+          onClick={(e) => handleSelectConversation(e.key as string)}
           items={conversationsItems}
-          activeKey={activeConversation || undefined}
-          onActiveChange={(key) => handleSelectConversation(key as string)}
-          style={{ flex: 1, overflow: 'auto' }}
+          style={{ border: 'none', background: '#F3F5F7' }}
+          className="compact-menu"
         />
       </div>
 
@@ -235,14 +238,12 @@ export function ChatContainer() {
         {/* 输入区域 */}
         <div className="bg-white p-4">
           <div className="mx-auto max-w-[800px] flex gap-2">
-
             <Sender
               value={inputValue}
               onChange={setInputValue}
               onSubmit={handleSend}
               loading={loading}
               placeholder="输入提示词描述你想要生成的图片..."
-              style={{ flex: 1, borderRadius: 12, backgroundColor: '#F3F5F7' }}
               suffix={false}
               footer={(actionNode) => {
                 return <Flex justify="space-between" align="center">
@@ -250,43 +251,45 @@ export function ChatContainer() {
                     <Tooltip title="仅图片上传,图片大小限制5MB">
                       <Button shape='circle' type="text" icon={<PaperClipOutlined />} />
                     </Tooltip>
-                    <Button shape='round' loading={expandLoading} icon={<OpenAIOutlined />} onClick={handleExpand}>
+                    <Button
+                      color="default"
+                      variant="filled" shape='round' loading={expandLoading} icon={<OpenAIOutlined />} onClick={handleExpand}>
                       扩写
                     </Button>
                     <SizeSelector value={imageSize} onChange={setImageSize} />
-                    <label>
-                    <Tag style={{
-                      borderRadius: 20,
-                      height: 30, 
-                      display: 'flex',
-                      alignItems: 'center',
-                      }} color="purple" variant="outlined">
-                      <Switch />
-                      <div className='ml-[5px] user-select-none'>保留提示词</div>
-                    </Tag>
+                    <label className="cursor-pointer select-none">
+                      <Tag style={{
+                        borderRadius: 20,
+                        height: 30,
+                        display: 'flex',
+                        alignItems: 'center',
+                      }} color={keepPrompt ? 'purple' : '#666'} variant="filled">
+                        <Switch checked={keepPrompt} onChange={setKeepPrompt} />
+                        <div className='ml-[5px]'>保留提示词</div>
+                      </Tag>
                     </label>
                   </Flex>
                   <Flex align="center">
                     <Tooltip title={`生成${numImages}张图片,最多10张`}>
-                    <InputNumber 
-                    mode="spinner"
-                    value={numImages}
-                    onChange={(value) => setNumImages(value||1)}
-                    controls 
-                    placeholder="数量" 
-                    variant="filled" 
-                    min={1}
-                    step={1}
-                    max={10}
-                    style={{ width: 120 }}
-                    styles={{
-                      input: {
-                        textAlign: 'center'
-                      }
-                    }}
-                    />
+                      <InputNumber
+                        mode="spinner"
+                        value={numImages}
+                        onChange={(value) => setNumImages(value || 1)}
+                        controls
+                        placeholder="数量"
+                        variant="filled"
+                        min={1}
+                        step={1}
+                        max={10}
+                        style={{ width: 120 }}
+                        styles={{
+                          input: {
+                            textAlign: 'center'
+                          }
+                        }}
+                      />
                     </Tooltip>
-                      <Divider orientation="vertical" />
+                    <Divider orientation="vertical" />
                     {actionNode}
                   </Flex>
                 </Flex>;
