@@ -90,6 +90,28 @@ export const messages = {
     }
     return null;
   },
+
+  delete: (id: string, conversationId: string): boolean => {
+    const msgs = messagesStore.get(conversationId) || [];
+    const index = msgs.findIndex(m => m.id === id);
+    if (index >= 0) {
+      msgs.splice(index, 1);
+      messagesStore.set(conversationId, msgs);
+      return true;
+    }
+    return false;
+  },
+
+  // 获取所有图片消息（assistant 角色且包含图片）
+  getAllImages: (): Message[] => {
+    const allImages: Message[] = [];
+    messagesStore.forEach((msgs) => {
+      msgs
+        .filter(m => m.role === 'assistant')
+        .forEach(m => allImages.push(m));
+    });
+    return allImages.sort((a, b) => b.createdAt - a.createdAt);
+  },
 };
 
 // 初始化数据库（空操作）

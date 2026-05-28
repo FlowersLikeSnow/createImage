@@ -8,8 +8,8 @@ import { nanoid } from 'nanoid';
  * 使用 NewAPI Images API 生成图片
  */
 export class OpenAIGPTImageAdapter implements ImageGenAdapter {
-  name = 'NewAPI GPT-Image-2';
-  modelId = 'gpt-image-2-flatfee';
+  name = 'NewAPI Gemini Image';
+  modelId = process.env.NEWAPI_MODEL || '';
   private client: OpenAI;
   private config: AdapterConfig;
 

@@ -6,7 +6,7 @@ import { DEFAULT_IMAGE_SIZE } from '@/lib/utils/size-config';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { prompt, imageSize, conversationId, referenceImage } = body;
+    const { prompt, imageSize, conversationId, referenceImage, numImages } = body;
 
     if (!prompt) {
       return NextResponse.json({ error: '缺少提示词' }, { status: 400 });
@@ -32,56 +32,92 @@ export async function POST(request: NextRequest) {
       content: prompt,
       referenceImage,
       imageSize: imageSize || DEFAULT_IMAGE_SIZE,
-      status: 'pending',
+      status: 'completed',
     });
 
-    // 创建AI消息（pending状态）
-    const aiMsg = messages.create({
-      conversationId: convId,
-      role: 'assistant',
-      status: 'processing',
-    });
+    // 确定生成数量，默认1张，最多10张
+    const count = Math.min(Math.max(numImages || 1, 1), 10);
 
-    try {
-      // 调用生图API
-      const result = await generateImage({
-        prompt,
-        size: imageSize || DEFAULT_IMAGE_SIZE,
-        n: 1,
+    // 创建多个AI消息（pending状态），每个对应一张图片
+    const aiMsgIds: string[] = [];
+    for (let i = 0; i < count; i++) {
+      const aiMsg = messages.create({
+        conversationId: convId,
+        role: 'assistant',
+        status: 'processing',
       });
-
-      // 更新AI消息状态
-      messages.update(aiMsg.id, convId, {
-        status: 'completed',
-        generatedImages: result.images,
-        content: result.metadata?.revisedPrompt || prompt,
-      });
-
-      // 更新用户消息状态
-      messages.update(userMsg.id, convId, { status: 'completed' });
-
-      return NextResponse.json({
-        success: true,
-        data: {
-          conversationId: convId,
-          messageId: aiMsg.id,
-          images: result.images,
-          revisedPrompt: result.metadata?.revisedPrompt,
-        },
-      });
-    } catch (genError) {
-      // 更新AI消息错误状态
-      messages.update(aiMsg.id, convId, {
-        status: 'failed',
-        error: genError instanceof Error ? genError.message : '生图失败',
-      });
-
-      messages.update(userMsg.id, convId, { status: 'failed' });
-
-      return NextResponse.json({
-        error: genError instanceof Error ? genError.message : '生图失败',
-      }, { status: 500 });
+      aiMsgIds.push(aiMsg.id);
     }
+
+    // 并行发起多个请求，每个请求 n=1
+    const results = await Promise.allSettled(
+      aiMsgIds.map(async (msgId) => {
+        try {
+          const result = await generateImage({
+            prompt,
+            size: imageSize || DEFAULT_IMAGE_SIZE,
+            n: 1,
+          });
+
+          // 更新AI消息状态
+          messages.update(msgId, convId, {
+            status: 'completed',
+            generatedImages: result.images,
+            content: result.metadata?.revisedPrompt || prompt,
+          });
+
+          return {
+            messageId: msgId,
+            success: true,
+            image: result.images[0],
+            revisedPrompt: result.metadata?.revisedPrompt,
+          };
+        } catch (error) {
+          // 更新AI消息失败状态
+          messages.update(msgId, convId, {
+            status: 'failed',
+            error: error instanceof Error ? error.message : '生图失败',
+          });
+
+          return {
+            messageId: msgId,
+            success: false,
+            error: error instanceof Error ? error.message : '生图失败',
+          };
+        }
+      })
+    );
+
+    // 收集成功和失败的结果
+    const images: Array<{ url: string; id: string; messageId: string; prompt: string }> = [];
+    const errors: Array<{ messageId: string; error: string }> = [];
+
+    results.forEach((result) => {
+      if (result.status === 'fulfilled' && result.value.success && result.value.image) {
+        images.push({
+          url: result.value.image.url,
+          id: result.value.image.id,
+          messageId: result.value.messageId,
+          prompt: result.value.revisedPrompt || prompt,
+        });
+      } else if (result.status === 'fulfilled' && !result.value.success) {
+        errors.push({
+          messageId: result.value.messageId,
+          error: result.value.error!,
+        });
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        conversationId: convId,
+        userMessageId: userMsg.id,
+        images,
+        errors,
+        revisedPrompt: results[0]?.status === 'fulfilled' ? results[0].value.revisedPrompt : undefined,
+      },
+    });
   } catch (error) {
     console.error('[API /generate] error:', error);
     return NextResponse.json({

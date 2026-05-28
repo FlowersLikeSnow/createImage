@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { message } from 'antd';
 import { DEFAULT_IMAGE_SIZE } from '@/lib/utils/size-config';
 
 interface GenerateParams {
@@ -9,12 +8,14 @@ interface GenerateParams {
   imageSize?: string;
   conversationId?: string;
   referenceImage?: string;
+  numImages?: number;
 }
 
 interface GenerateResult {
   conversationId: string;
-  messageId: string;
-  images: Array<{ url: string; id: string }>;
+  userMessageId: string;
+  images: Array<{ url: string; id: string; messageId: string; prompt: string }>;
+  errors: Array<{ messageId: string; error: string }>;
   revisedPrompt?: string;
 }
 
@@ -23,7 +24,7 @@ export function useGenerate() {
   const [result, setResult] = useState<GenerateResult | null>(null);
 
   const generate = async (params: GenerateParams): Promise<GenerateResult | null> => {
-    setLoading(true);
+    // 发送请求时不设置 loading，让调用方自行处理
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
@@ -33,6 +34,7 @@ export function useGenerate() {
           imageSize: params.imageSize || DEFAULT_IMAGE_SIZE,
           conversationId: params.conversationId,
           referenceImage: params.referenceImage,
+          numImages: params.numImages,
         }),
       });
 
@@ -46,16 +48,19 @@ export function useGenerate() {
       return data.data;
     } catch (error) {
       console.error('[useGenerate] error:', error);
-      message.error(error instanceof Error ? error.message : '生图失败');
       return null;
-    } finally {
-      setLoading(false);
     }
   };
+
+  // 仅用于发送按钮的短暂 loading
+  const startSending = () => setLoading(true);
+  const stopSending = () => setLoading(false);
 
   return {
     loading,
     result,
     generate,
+    startSending,
+    stopSending,
   };
 }
