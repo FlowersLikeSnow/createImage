@@ -1,0 +1,74 @@
+import OpenAI from 'openai';
+import type { ImageGenAdapter, AdapterConfig } from './adapter';
+import type { GenParams, GenResult } from '@/types/ai';
+import { nanoid } from 'nanoid';
+
+/**
+ * NewAPI GPT-Image-2 适配器
+ * 使用 NewAPI Images API 生成图片
+ */
+export class OpenAIGPTImageAdapter implements ImageGenAdapter {
+  name = 'NewAPI GPT-Image-2';
+  modelId = 'gpt-image-2-flatfee';
+  private client: OpenAI;
+  private config: AdapterConfig;
+
+  constructor(config?: AdapterConfig) {
+    this.config = config || {};
+
+    const apiKey = this.config.apiKey || process.env.NEWAPI_API_KEY;
+    const baseUrlRaw = this.config.baseUrl || process.env.NEWAPI_BASE_URL || '';
+    const baseUrl = baseUrlRaw.endsWith('/v1') ? baseUrlRaw : `${baseUrlRaw}/v1`;
+
+    console.log('[OpenAIGPTImageAdapter] Using config:', {
+      baseURL: baseUrl,
+      model: this.modelId,
+      hasApiKey: !!apiKey,
+    });
+
+    this.client = new OpenAI({
+      apiKey,
+      baseURL: baseUrl,
+      timeout: this.config.timeout || 1200000, // 20分钟超时
+    });
+  }
+
+  async generate(params: GenParams): Promise<GenResult> {
+    console.log('[OpenAIGPTImageAdapter] generate params:', params);
+    try {
+      const response = await this.client.images.generate({
+        model: this.modelId,
+        prompt: params.prompt,
+        size: params.size || '1024x1024',
+        n: params.n || 1,
+        response_format: 'url',
+      });
+
+      console.log('[OpenAIGPTImageAdapter] generate response:', response);
+      const images = response.data || [];
+
+      return {
+        images: images.map((img) => ({
+          url: img.url || '',
+          id: nanoid(),
+        })),
+        metadata: {
+          model: this.modelId,
+          revisedPrompt: response.data?.[0]?.revised_prompt,
+        },
+      };
+    } catch (error) {
+      console.error('[OpenAIGPTImageAdapter] generate error:', error);
+      throw error;
+    }
+  }
+
+  async isAvailable(): Promise<boolean> {
+    try {
+      const apiKey = this.config.apiKey || process.env.NEWAPI_API_KEY;
+      return !!apiKey && apiKey.length > 10;
+    } catch {
+      return false;
+    }
+  }
+}
