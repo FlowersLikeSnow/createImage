@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Button, Spin, Image } from 'antd';
 import { DownloadOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { GeneratedImage } from '@/types/conversation';
@@ -30,7 +29,7 @@ export function ImagePreview({ images, onRegenerate, loading }: ImagePreviewProp
   if (loading) {
     return (
       <div className="flex justify-center py-8">
-        <Spin size="large" tip="正在生成图片..." />
+        <Spin size="large" description="正在生成图片..." />
       </div>
     );
   }
