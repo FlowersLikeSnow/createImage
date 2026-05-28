@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateImage } from '@/lib/ai';
 import { conversations, messages } from '@/lib/db';
 import { DEFAULT_IMAGE_SIZE } from '@/lib/utils/size-config';
+import { saveImageLocally } from '@/lib/utils/image-storage';
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,17 +60,27 @@ export async function POST(request: NextRequest) {
             n: 1,
           });
 
-          // 更新AI消息状态
+          // 获取外部图片 URL
+          const externalUrl = result.images[0]?.url;
+          if (!externalUrl) {
+            throw new Error('未返回图片');
+          }
+
+          // 保存图片到本地服务器
+          const localUrl = await saveImageLocally(externalUrl);
+          console.log('[API /generate] Saved image locally:', localUrl);
+
+          // 更新AI消息状态（使用本地 URL）
           messages.update(msgId, convId, {
             status: 'completed',
-            generatedImages: result.images,
+            generatedImages: [{ url: localUrl, id: result.images[0].id }],
             content: result.metadata?.revisedPrompt || prompt,
           });
 
           return {
             messageId: msgId,
             success: true,
-            image: result.images[0],
+            image: { url: localUrl, id: result.images[0].id },
             revisedPrompt: result.metadata?.revisedPrompt,
           };
         } catch (error) {
