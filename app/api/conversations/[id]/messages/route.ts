@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, messages } from '@/lib/db';
-import { eq, asc } from 'drizzle-orm';
+import { messages } from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
@@ -9,21 +8,11 @@ export async function GET(
   try {
     const { id: conversationId } = await params;
 
-    const result = db.select()
-      .from(messages)
-      .where(eq(messages.conversationId, conversationId))
-      .orderBy(asc(messages.createdAt))
-      .execute();
-
-    // 转换消息格式
-    const formattedMsgs = result.map(msg => ({
-      ...msg,
-      generatedImages: msg.generatedImages ? JSON.parse(msg.generatedImages as string) : undefined,
-    }));
+    const result = messages.getByConversation(conversationId);
 
     return NextResponse.json({
       success: true,
-      data: formattedMsgs,
+      data: result,
     });
   } catch (error) {
     console.error('[API /conversations/[id]/messages] error:', error);

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateImage } from '@/lib/ai';
-import { db, messages, conversations } from '@/lib/db';
+import { conversations, messages } from '@/lib/db';
 import { DEFAULT_IMAGE_SIZE } from '@/lib/utils/size-config';
-import { eq } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,41 +14,33 @@ export async function POST(request: NextRequest) {
 
     // 创建或获取对话
     let convId = conversationId;
+    let conv = null;
     if (!convId) {
-      const convResult = db.insert(conversations).values({
-        title: prompt.slice(0, 50),
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      }).returning({ id: conversations.id }).execute();
-      convId = convResult[0]?.id;
+      conv = conversations.create({ title: prompt.slice(0, 50) });
+      convId = conv.id;
     } else {
-      // 更新对话时间
-      db.update(conversations)
-        .set({ updatedAt: Date.now() })
-        .where(eq(conversations.id, convId))
-        .execute();
+      conv = conversations.get(convId);
+      if (conv) {
+        conversations.update(convId, { updatedAt: Date.now() });
+      }
     }
 
     // 创建用户消息
-    const userMsgResult = db.insert(messages).values({
+    const userMsg = messages.create({
       conversationId: convId,
       role: 'user',
       content: prompt,
       referenceImage,
       imageSize: imageSize || DEFAULT_IMAGE_SIZE,
       status: 'pending',
-      createdAt: Date.now(),
-    }).returning({ id: messages.id }).execute();
-    const userMsgId = userMsgResult[0]?.id;
+    });
 
     // 创建AI消息（pending状态）
-    const aiMsgResult = db.insert(messages).values({
+    const aiMsg = messages.create({
       conversationId: convId,
       role: 'assistant',
       status: 'processing',
-      createdAt: Date.now(),
-    }).returning({ id: messages.id }).execute();
-    const aiMsgId = aiMsgResult[0]?.id;
+    });
 
     try {
       // 调用生图API
@@ -60,44 +51,32 @@ export async function POST(request: NextRequest) {
       });
 
       // 更新AI消息状态
-      db.update(messages)
-        .set({
-          status: 'completed',
-          generatedImages: JSON.stringify(result.images),
-          content: result.metadata?.revisedPrompt || prompt,
-        })
-        .where(eq(messages.id, aiMsgId))
-        .execute();
+      messages.update(aiMsg.id, convId, {
+        status: 'completed',
+        generatedImages: result.images,
+        content: result.metadata?.revisedPrompt || prompt,
+      });
 
       // 更新用户消息状态
-      db.update(messages)
-        .set({ status: 'completed' })
-        .where(eq(messages.id, userMsgId))
-        .execute();
+      messages.update(userMsg.id, convId, { status: 'completed' });
 
       return NextResponse.json({
         success: true,
         data: {
           conversationId: convId,
-          messageId: aiMsgId,
+          messageId: aiMsg.id,
           images: result.images,
           revisedPrompt: result.metadata?.revisedPrompt,
         },
       });
     } catch (genError) {
       // 更新AI消息错误状态
-      db.update(messages)
-        .set({
-          status: 'failed',
-          error: genError instanceof Error ? genError.message : '生图失败',
-        })
-        .where(eq(messages.id, aiMsgId))
-        .execute();
+      messages.update(aiMsg.id, convId, {
+        status: 'failed',
+        error: genError instanceof Error ? genError.message : '生图失败',
+      });
 
-      db.update(messages)
-        .set({ status: 'failed' })
-        .where(eq(messages.id, userMsgId))
-        .execute();
+      messages.update(userMsg.id, convId, { status: 'failed' });
 
       return NextResponse.json({
         error: genError instanceof Error ? genError.message : '生图失败',

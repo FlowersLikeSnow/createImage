@@ -14,14 +14,11 @@
     "react-dom": "^19.2.4",
     "antd": "^6.4.2",
     "openai": "^6.38.0",
-    "better-sqlite3": "^12.10.0",
-    "drizzle-orm": "^0.45.2",
     "nanoid": "^5.1.11",
     "@ant-design/nextjs-registry": "^1.0.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

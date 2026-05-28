@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, conversations } from '@/lib/db';
-import { eq } from 'drizzle-orm';
+import { conversations } from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
@@ -9,18 +8,15 @@ export async function GET(
   try {
     const { id: conversationId } = await params;
 
-    const result = db.select()
-      .from(conversations)
-      .where(eq(conversations.id, conversationId))
-      .execute();
+    const result = conversations.get(conversationId);
 
-    if (result.length === 0) {
+    if (!result) {
       return NextResponse.json({ error: '对话不存在' }, { status: 404 });
     }
 
     return NextResponse.json({
       success: true,
-      data: result[0],
+      data: result,
     });
   } catch (error) {
     console.error('[API /conversations/[id]] error:', error);

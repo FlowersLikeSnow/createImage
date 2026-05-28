@@ -1,20 +1,13 @@
 import { NextResponse } from 'next/server';
-import { db, conversations } from '@/lib/db';
-import { desc } from 'drizzle-orm';
+import { conversations } from '@/lib/db';
 
 export async function GET() {
   try {
-    const result = db.select()
-      .from(conversations)
-      .orderBy(desc(conversations.updatedAt))
-      .execute();
+    const result = conversations.getAll();
 
     return NextResponse.json({
       success: true,
-      data: result.map(conv => ({
-        ...conv,
-        messages: [],
-      })),
+      data: result,
     });
   } catch (error) {
     console.error('[API /conversations] error:', error);
