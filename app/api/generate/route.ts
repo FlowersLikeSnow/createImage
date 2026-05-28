@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateImage } from '@/lib/ai';
 import { db, messages, conversations } from '@/lib/db';
-import { nanoid } from 'nanoid';
 import { DEFAULT_IMAGE_SIZE } from '@/lib/utils/size-config';
+import { eq } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,13 +18,16 @@ export async function POST(request: NextRequest) {
     if (!convId) {
       const convResult = db.insert(conversations).values({
         title: prompt.slice(0, 50),
-      }).returning({ id: conversations.id });
-      convId = convResult[0].id;
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      }).returning({ id: conversations.id }).execute();
+      convId = convResult[0]?.id;
     } else {
       // 更新对话时间
       db.update(conversations)
         .set({ updatedAt: Date.now() })
-        .where({ id: convId });
+        .where(eq(conversations.id, convId))
+        .execute();
     }
 
     // 创建用户消息
@@ -35,16 +38,18 @@ export async function POST(request: NextRequest) {
       referenceImage,
       imageSize: imageSize || DEFAULT_IMAGE_SIZE,
       status: 'pending',
-    }).returning({ id: messages.id });
-    const userMsgId = userMsgResult[0].id;
+      createdAt: Date.now(),
+    }).returning({ id: messages.id }).execute();
+    const userMsgId = userMsgResult[0]?.id;
 
     // 创建AI消息（pending状态）
     const aiMsgResult = db.insert(messages).values({
       conversationId: convId,
       role: 'assistant',
       status: 'processing',
-    }).returning({ id: messages.id });
-    const aiMsgId = aiMsgResult[0].id;
+      createdAt: Date.now(),
+    }).returning({ id: messages.id }).execute();
+    const aiMsgId = aiMsgResult[0]?.id;
 
     try {
       // 调用生图API
@@ -61,12 +66,14 @@ export async function POST(request: NextRequest) {
           generatedImages: JSON.stringify(result.images),
           content: result.metadata?.revisedPrompt || prompt,
         })
-        .where({ id: aiMsgId });
+        .where(eq(messages.id, aiMsgId))
+        .execute();
 
       // 更新用户消息状态
       db.update(messages)
         .set({ status: 'completed' })
-        .where({ id: userMsgId });
+        .where(eq(messages.id, userMsgId))
+        .execute();
 
       return NextResponse.json({
         success: true,
@@ -84,11 +91,13 @@ export async function POST(request: NextRequest) {
           status: 'failed',
           error: genError instanceof Error ? genError.message : '生图失败',
         })
-        .where({ id: aiMsgId });
+        .where(eq(messages.id, aiMsgId))
+        .execute();
 
       db.update(messages)
         .set({ status: 'failed' })
-        .where({ id: userMsgId });
+        .where(eq(messages.id, userMsgId))
+        .execute();
 
       return NextResponse.json({
         error: genError instanceof Error ? genError.message : '生图失败',
