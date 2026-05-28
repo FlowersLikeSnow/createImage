@@ -1,9 +1,25 @@
 import { nanoid } from 'nanoid';
 import type { Message, Conversation } from '@/types/conversation';
 
-// 使用内存存储（暂不使用数据库）
-const conversationsStore: Map<string, Conversation> = new Map();
-const messagesStore: Map<string, Message[]> = new Map();
+// 全局单例存储（解决 Next.js 热重载数据丢失问题）
+declare global {
+  // eslint-disable-next-line no-var
+  var conversationsStore: Map<string, Conversation> | undefined;
+  // eslint-disable-next-line no-var
+  var messagesStore: Map<string, Message[]> | undefined;
+}
+
+// 使用全局存储，确保热重载时数据不丢失
+const conversationsStore = global.conversationsStore || new Map<string, Conversation>();
+const messagesStore = global.messagesStore || new Map<string, Message[]>();
+
+// 初始化全局存储
+if (!global.conversationsStore) {
+  global.conversationsStore = conversationsStore;
+}
+if (!global.messagesStore) {
+  global.messagesStore = messagesStore;
+}
 
 // 对话表操作
 export const conversations = {
@@ -19,6 +35,7 @@ export const conversations = {
     };
     conversationsStore.set(id, conv);
     messagesStore.set(id, []);
+    console.log('[DB] Created conversation:', id);
     return conv;
   },
 
@@ -73,10 +90,12 @@ export const messages = {
     const msgs = messagesStore.get(data.conversationId) || [];
     msgs.push(msg);
     messagesStore.set(data.conversationId, msgs);
+    console.log('[DB] Created message:', id, 'in conversation:', data.conversationId, 'role:', data.role);
     return msg;
   },
 
   getByConversation: (conversationId: string): Message[] => {
+    console.log('[DB] Getting messages for conversation:', conversationId, 'count:', (messagesStore.get(conversationId) || []).length);
     return messagesStore.get(conversationId) || [];
   },
 
@@ -86,8 +105,10 @@ export const messages = {
     if (index >= 0) {
       msgs[index] = { ...msgs[index], ...data };
       messagesStore.set(conversationId, msgs);
+      console.log('[DB] Updated message:', id, 'status:', data.status);
       return msgs[index];
     }
+    console.log('[DB] Message not found for update:', id);
     return null;
   },
 
@@ -97,24 +118,28 @@ export const messages = {
     if (index >= 0) {
       msgs.splice(index, 1);
       messagesStore.set(conversationId, msgs);
+      console.log('[DB] Deleted message:', id);
       return true;
     }
     return false;
   },
 
-  // 获取所有图片消息（assistant 角色且包含图片）
+  // 获取所有图片消息（assistant 角色）
   getAllImages: (): Message[] => {
     const allImages: Message[] = [];
-    messagesStore.forEach((msgs) => {
+    messagesStore.forEach((msgs, convId) => {
       msgs
         .filter(m => m.role === 'assistant')
         .forEach(m => allImages.push(m));
     });
+    console.log('[DB] getAllImages - conversations:', messagesStore.size, 'total images:', allImages.length);
     return allImages.sort((a, b) => b.createdAt - a.createdAt);
   },
 };
 
-// 初始化数据库（空操作）
+// 初始化数据库
 export function initDatabase() {
-  console.log('Using in-memory storage');
+  console.log('[DB] Using global in-memory storage');
+  console.log('[DB] Current conversations:', conversationsStore.size);
+  console.log('[DB] Current messages stores:', messagesStore.size);
 }
