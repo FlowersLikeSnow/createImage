@@ -355,8 +355,11 @@ export function ChatContainer() {
                     </Tooltip>
                     <Divider orientation="vertical" />
                     
-                  <Tooltip placement='topRight' title={numImages === 1 ?`单次生成:派发单个渲染任务(预估消耗${(getSizeLevel(imageSize) == '1K' ? 0.1 : getSizeLevel(imageSize) == '2K' ? 0.2 : 0.3) * numImages}积分)`:
-                  `并发生成:同时提交${numImages}个任务(预估消耗${(getSizeLevel(imageSize) == '1K' ? 0.1 : getSizeLevel(imageSize) == '2K' ? 0.2 : 0.3) * numImages}积分)`}>
+                  <Tooltip placement='topRight' title={
+                      numImages === 1
+                        ? `单次生成 (预估 ${(getSizeLevel(imageSize) === '1K' ? 0.1 : getSizeLevel(imageSize) === '2K' ? 0.2 : 0.3).toFixed(1)} 积分)`
+                        : `并发生成 ${numImages} 张 (预估 ${((getSizeLevel(imageSize) === '1K' ? 0.1 : getSizeLevel(imageSize) === '2K' ? 0.2 : 0.3) * numImages).toFixed(1)} 积分)`
+                    }>
                     <SendButton disabled={inputValue.trim() === '' || expandLoading || loading} />
                     </Tooltip>
                   </Flex>
