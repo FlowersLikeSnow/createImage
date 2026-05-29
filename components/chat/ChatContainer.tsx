@@ -2,13 +2,14 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Sender } from '@ant-design/x';
-import { Button, Image, Spin, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNumber, Menu, Card, Empty, Popconfirm, message } from 'antd';
-import { DownloadOutlined, OpenAIOutlined, PaperClipOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Button, Spin, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNumber, Menu, message } from 'antd';
+import { PaperClipOutlined } from '@ant-design/icons';
+import { Sparkles } from 'lucide-react';
 import { useGenerate } from '@/hooks/useGenerate';
 import type { Message } from '@/types/conversation';
 import { DEFAULT_IMAGE_SIZE } from '@/lib/utils/size-config';
 import { SizeSelector } from './SizeSelector';
-import { Sparkles } from 'lucide-react';
+import { ImageCard } from './ImageCard';
 
 // 菜单路由配置
 const menuItems = [
@@ -178,77 +179,6 @@ export function ChatContainer() {
     }
   }, []);
 
-  // 渲染图片卡片
-  const renderImageCard = (img: Message) => {
-    const isProcessing = img.status === 'processing';
-    const isFailed = img.status === 'failed';
-    const hasImage = img.generatedImages && img.generatedImages.length > 0;
-
-    return (
-      <Card
-        key={img.id}
-        className="w-[280px] shadow-sm"
-        cover={
-          isProcessing ? (
-            <div className="h-[180px] items-center justify-center bg-gray-50"
-            style={{ display: 'flex' }}>
-              <Spin description="正在生成..." />
-            </div>
-          ) : isFailed ? (
-            <div className="h-[180px] items-center justify-center bg-gray-50"
-            style={{ display: 'flex' }}>
-              <Typography.Text type="danger">{img.error || '生成失败'}</Typography.Text>
-            </div>
-          ) : hasImage ? (
-            <Image
-              src={img.generatedImages![0].url}
-              alt="generated"
-              style={{ height: 180, objectFit: 'cover' }}
-              preview={{ mask: '预览' }}
-            />
-          ) : (
-            <div className="h-[180px] flex items-center justify-center bg-gray-50">
-              <Empty description="无图片" />
-            </div>
-          )
-        }
-        actions={
-          isProcessing ? [] : [
-            hasImage && (
-              <Tooltip title="下载" key="download">
-                <DownloadOutlined onClick={() => handleDownload(img.generatedImages![0].url)} />
-              </Tooltip>
-            ),
-            <Popconfirm
-              title="确认删除"
-              description="删除后无法恢复"
-              onConfirm={() => handleDelete(img.id)}
-              okText="删除"
-              cancelText="取消"
-              key="delete"
-            >
-              <DeleteOutlined className="text-red-500" />
-            </Popconfirm>,
-          ].filter(Boolean)
-        }
-      >
-        <Card.Meta
-          description={
-            <Typography.Paragraph
-              ellipsis={{ rows: 2, expandable: true }}
-              className="text-sm text-gray-600 !mb-2"
-            >
-              {img.content || '无提示词'}
-            </Typography.Paragraph>
-          }
-        />
-        <Typography.Text type="secondary" className="text-xs">
-          {new Date(img.createdAt).toLocaleString()}
-        </Typography.Text>
-      </Card>
-    );
-  };
-
   return (
     <div className="flex h-screen">
       {/* 左侧菜单列表 */}
@@ -285,7 +215,14 @@ export function ChatContainer() {
             </div>
           ) : (
             <div className="flex flex-wrap gap-[20px]">
-              {images.map(renderImageCard)}
+              {images.map(img => (
+                <ImageCard
+                  key={img.id}
+                  img={img}
+                  onDownload={handleDownload}
+                  onDelete={handleDelete}
+                />
+              ))}
             </div>
           )}
         </div>
