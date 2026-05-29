@@ -17,7 +17,7 @@ const menuItems = [
 export function ChatContainer() {
   const { loading, generate, startSending, stopSending } = useGenerate();
   const [numImages, setNumImages] = useState(1);
-  const [keepPrompt, setKeepPrompt] = useState(true);
+  const [keepPrompt, setKeepPrompt] = useState(false);
   const [images, setImages] = useState<Message[]>([]);
   const [activeMenu, setActiveMenu] = useState('ai-image');
   const [imageSize, setImageSize] = useState(DEFAULT_IMAGE_SIZE);
@@ -65,7 +65,9 @@ export function ChatContainer() {
       });
     }
     setImages(prev => [...pendingCards, ...prev]);
-    setInputValue('');
+    if (!keepPrompt) {
+      setInputValue('');
+    }
 
     // 发送按钮立即停止 loading
     startSending();
@@ -113,7 +115,7 @@ export function ChatContainer() {
         ));
       }
     });
-  }, [imageSize, numImages, generate, startSending, stopSending]);
+  }, [imageSize, numImages, keepPrompt, generate, startSending, stopSending]);
 
   // 扩写提示词
   const handleExpand = useCallback(async () => {
@@ -270,7 +272,7 @@ export function ChatContainer() {
         </div>
 
         {/* 消息区域 - 图片卡片列表 */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto py-[20px]">
           {loadingImages ? (
             <div className="flex items-center justify-center h-full">
               <Spin description="加载历史图片..." />
@@ -281,7 +283,7 @@ export function ChatContainer() {
               <Typography.Text className="text-sm mt-2">支持扩写提示词、选择尺寸比例</Typography.Text>
             </div>
           ) : (
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-[20px]">
               {images.map(renderImageCard)}
             </div>
           )}
@@ -295,6 +297,7 @@ export function ChatContainer() {
               onChange={setInputValue}
               onSubmit={handleSend}
               loading={loading}
+              disabled={expandLoading}
               placeholder="输入提示词描述你想要生成的图片..."
               suffix={false}
               autoSize={{ minRows: 4, maxRows: 8 }}
@@ -305,7 +308,7 @@ export function ChatContainer() {
                       <Button shape='circle' type="text" icon={<PaperClipOutlined />} />
                     </Tooltip>
                     <Button
-                      color="default"
+                      color={expandLoading ? 'purple' : 'default'}
                       variant="filled" shape='round' loading={expandLoading} icon={<OpenAIOutlined />} onClick={handleExpand}>
                       扩写
                     </Button>
