@@ -31,11 +31,6 @@ export function ChatContainer() {
   const [inputValue, setInputValue] = useState('');
   const [loadingImages, setLoadingImages] = useState(true);
 
-  // 加载历史图片
-  useEffect(() => {
-    loadImages();
-  }, []);
-
   const loadImages = useCallback(async () => {
     setLoadingImages(true);
     try {
@@ -50,6 +45,18 @@ export function ChatContainer() {
       setLoadingImages(false);
     }
   }, []);
+
+  // 监听用户状态变化，自动加载或清空图片列表
+  useEffect(() => {
+    if (!user) {
+      // 未登录：清空图片列表
+      setImages([]);
+      setLoadingImages(false);
+    } else {
+      // 已登录：加载该用户的图片
+      loadImages();
+    }
+  }, [user, loadImages]);
 
   // 发送生图请求
   const handleSend = useCallback(async (prompt: string) => {
