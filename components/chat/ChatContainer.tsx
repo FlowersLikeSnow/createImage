@@ -6,6 +6,8 @@ import { Button, Spin, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNum
 import { PaperClipOutlined } from '@ant-design/icons';
 import { Sparkles } from 'lucide-react';
 import { useGenerate } from '@/hooks/useGenerate';
+import { useAuth } from '@/components/auth/AuthContext';
+import { UserAvatar } from '@/components/auth/UserAvatar';
 import type { Message } from '@/types/conversation';
 import { DEFAULT_IMAGE_SIZE } from '@/lib/utils/size-config';
 import { SizeSelector } from './SizeSelector';
@@ -18,6 +20,7 @@ const menuItems = [
 
 export function ChatContainer() {
   const { loading, generate, startSending, stopSending } = useGenerate();
+  const { requireAuth } = useAuth();
   const [numImages, setNumImages] = useState(1);
   const [keepPrompt, setKeepPrompt] = useState(false);
   const [images, setImages] = useState<Message[]>([]);
@@ -50,6 +53,7 @@ export function ChatContainer() {
   // 发送生图请求
   const handleSend = useCallback(async (prompt: string) => {
     if (!prompt.trim()) return;
+    if (!requireAuth()) return;  // 未登录则弹出登录弹窗
 
     // 立即添加占位卡片（loading状态）
     const pendingCards: Message[] = [];
@@ -117,11 +121,12 @@ export function ChatContainer() {
         ));
       }
     });
-  }, [imageSize, numImages, keepPrompt, generate, startSending, stopSending]);
+  }, [imageSize, numImages, keepPrompt, generate, startSending, stopSending, requireAuth]);
 
   // 扩写提示词
   const handleExpand = useCallback(async () => {
     if (!inputValue.trim()) return;
+    if (!requireAuth()) return;  // 未登录则弹出登录弹窗
     setExpandLoading(true);
     try {
       const response = await fetch('/api/prompt/expand', {
@@ -141,7 +146,7 @@ export function ChatContainer() {
     } finally {
       setExpandLoading(false);
     }
-  }, [inputValue]);
+  }, [inputValue, requireAuth]);
 
   // 删除图片
   const handleDelete = useCallback(async (imageId: string) => {
@@ -196,10 +201,11 @@ export function ChatContainer() {
       {/* 主区域 */}
       <div className="flex-1 flex flex-col bg-gray-100 p-[20px]">
         {/* 顶部标题栏 */}
-        <div className="bg-gray-800 text-white px-6 py-3">
+        <div className="bg-gray-800 text-white px-6 py-3 flex justify-between items-center">
           <Typography.Title level={4} className="!text-white !mb-0">
             AI生图
           </Typography.Title>
+          <UserAvatar />
         </div>
 
         {/* 消息区域 - 图片卡片列表 */}

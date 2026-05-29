@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { expandPrompt } from '@/lib/llm/prompt-expander';
+import { verifyAuth, withAuthResponse } from '@/lib/auth/middleware';
 
 export async function POST(request: NextRequest) {
+  // 验证登录状态
+  const authResult = await verifyAuth(request);
+  if (!authResult.success) {
+    return withAuthResponse(authResult.error!);
+  }
+
   try {
     const body = await request.json();
     const { prompt, stylePrompt } = body;

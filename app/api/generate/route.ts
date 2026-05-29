@@ -3,8 +3,15 @@ import { generateImage } from '@/lib/ai';
 import { conversations, messages } from '@/lib/db';
 import { DEFAULT_IMAGE_SIZE } from '@/lib/utils/size-config';
 import { saveImageLocally } from '@/lib/utils/image-storage';
+import { verifyAuth, withAuthResponse } from '@/lib/auth/middleware';
 
 export async function POST(request: NextRequest) {
+  // 验证登录状态
+  const authResult = await verifyAuth(request);
+  if (!authResult.success) {
+    return withAuthResponse(authResult.error!);
+  }
+
   try {
     const body = await request.json();
     const { prompt, imageSize, conversationId, referenceImage, numImages } = body;

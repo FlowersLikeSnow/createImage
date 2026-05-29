@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { messages } from '@/lib/db';
 import { deleteLocalImage } from '@/lib/utils/image-storage';
+import { verifyAuth, withAuthResponse } from '@/lib/auth/middleware';
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // 验证登录状态
+  const authResult = await verifyAuth(request);
+  if (!authResult.success) {
+    return withAuthResponse(authResult.error!);
+  }
+
   try {
     const { id } = await params;
 

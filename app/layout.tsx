@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import { ConfigProvider } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
+import { AuthWrapper } from '@/components/AuthWrapper';
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,7 +20,9 @@ export default function RootLayout({
       <body>
         <AntdRegistry>
           <ConfigProvider locale={zhCN}>
-            {children}
+            <AuthWrapper>
+              {children}
+            </AuthWrapper>
           </ConfigProvider>
         </AntdRegistry>
       </body>
