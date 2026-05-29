@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const result = conversations.getAll();
+    const result = conversations.getByUserId(authResult.userId!);
 
     return NextResponse.json({
       success: true,

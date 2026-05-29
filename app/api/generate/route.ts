@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     let convId = conversationId;
     let conv = null;
     if (!convId) {
-      conv = conversations.create({ title: prompt.slice(0, 50) });
+      conv = conversations.create({ title: prompt.slice(0, 50), userId: authResult.userId! });
       convId = conv.id;
     } else {
       conv = conversations.get(convId);
@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
 
     // 创建用户消息
     const userMsg = messages.create({
+      userId: authResult.userId!,
       conversationId: convId,
       role: 'user',
       content: prompt,
@@ -50,6 +51,7 @@ export async function POST(request: NextRequest) {
     const aiMsgIds: string[] = [];
     for (let i = 0; i < count; i++) {
       const aiMsg = messages.create({
+        userId: authResult.userId!,
         conversationId: convId,
         role: 'assistant',
         status: 'processing',

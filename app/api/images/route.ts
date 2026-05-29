@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const images = messages.getAllImages();
+    const images = messages.getAllImagesByUser(authResult.userId!);
 
     return NextResponse.json({
       success: true,

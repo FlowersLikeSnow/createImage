@@ -23,11 +23,12 @@ if (!global.messagesStore) {
 
 // 对话表操作
 export const conversations = {
-  create: (data: { title: string }): Conversation => {
+  create: (data: { title: string; userId: string }): Conversation => {
     const id = nanoid();
     const now = Date.now();
     const conv: Conversation = {
       id,
+      userId: data.userId,
       title: data.title,
       messages: [],
       createdAt: now,
@@ -35,7 +36,7 @@ export const conversations = {
     };
     conversationsStore.set(id, conv);
     messagesStore.set(id, []);
-    console.log('[DB] Created conversation:', id);
+    console.log('[DB] Created conversation:', id, 'for user:', data.userId);
     return conv;
   },
 
@@ -48,6 +49,12 @@ export const conversations = {
       };
     }
     return null;
+  },
+
+  getByUserId: (userId: string): Conversation[] => {
+    return Array.from(conversationsStore.values())
+      .filter(c => c.userId === userId)
+      .sort((a, b) => b.updatedAt - a.updatedAt);
   },
 
   getAll: (): Conversation[] => {
@@ -69,6 +76,7 @@ export const conversations = {
 // 消息表操作
 export const messages = {
   create: (data: {
+    userId: string;
     conversationId: string;
     role: 'user' | 'assistant';
     content?: string;
@@ -79,6 +87,7 @@ export const messages = {
     const id = nanoid();
     const msg: Message = {
       id,
+      userId: data.userId,
       conversationId: data.conversationId,
       role: data.role,
       content: data.content || '',
@@ -90,7 +99,7 @@ export const messages = {
     const msgs = messagesStore.get(data.conversationId) || [];
     msgs.push(msg);
     messagesStore.set(data.conversationId, msgs);
-    console.log('[DB] Created message:', id, 'in conversation:', data.conversationId, 'role:', data.role);
+    console.log('[DB] Created message:', id, 'for user:', data.userId, 'in conversation:', data.conversationId);
     return msg;
   },
 
@@ -124,7 +133,19 @@ export const messages = {
     return false;
   },
 
-  // 获取所有图片消息（assistant 角色）
+  // 获取用户的所有图片消息（assistant 角色）
+  getAllImagesByUser: (userId: string): Message[] => {
+    const allImages: Message[] = [];
+    messagesStore.forEach((msgs) => {
+      msgs
+        .filter(m => m.role === 'assistant' && m.userId === userId)
+        .forEach(m => allImages.push(m));
+    });
+    console.log('[DB] getAllImagesByUser - userId:', userId, 'total images:', allImages.length);
+    return allImages.sort((a, b) => b.createdAt - a.createdAt);
+  },
+
+  // 获取所有图片消息（旧方法，已弃用）
   getAllImages: (): Message[] => {
     const allImages: Message[] = [];
     messagesStore.forEach((msgs, convId) => {

@@ -10,6 +10,7 @@ export interface GeneratedImage {
 
 export interface Message {
   id: string;
+  userId: string;           // 用户ID
   conversationId: string;
   role: MessageRole;
   content?: string;
@@ -24,6 +25,7 @@ export interface Message {
 
 export interface Conversation {
   id: string;
+  userId: string;           // 用户ID
   title: string;
   messages: Message[];
   createdAt: number;
