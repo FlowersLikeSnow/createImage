@@ -37,17 +37,32 @@ export function SizeSelector({ value, onChange }: SizeSelectorProps) {
         value={selectedLevel}
         onChange={handleLevelChange}
         options={[
-          { value: '1K', label: '1K' },
-          { value: '2K', label: '2K' },
-          { value: '4K', label: '4K' },
+          {
+            value: '1K', label: <div className="flex items-center">
+              <div className='w-[30px] text-center'>1K</div>
+              <Tag style={{ borderRadius: 20 }} color="warning" variant="outlined">0.1积分</Tag>
+              </div>
+          },
+          {
+            value: '2K', label: <div className="flex items-center">
+              <div className='w-[30px] text-center'>2K</div>
+              <Tag style={{ borderRadius: 20 }} color="warning" variant="outlined">0.2积分</Tag>
+              </div>
+          },
+          {
+            value: '4K', label: <div className="flex items-center">
+              <div className='w-[30px] text-center'>4K</div>
+              <Tag style={{ borderRadius: 20 }} color="warning" variant="outlined">0.3积分</Tag>
+              </div>
+          },
         ]}
-        style={{ width: 60 }}
+        style={{ width: 120 }}
         styles={{
           root: {
             borderRadius: '20px 0 0 20px',
           }
         }}
-                    variant="filled" 
+        variant="filled"
       />
       <Select
         value={selectedSize}
@@ -56,7 +71,7 @@ export function SizeSelector({ value, onChange }: SizeSelectorProps) {
           value: opt.value,
           label: <div className="flex items-center">
             <div className='w-[40px] text-center'>{opt.label.replace(`${selectedLevel} `, '')}</div>
-            <Tag style={{borderRadius: 20}} color="purple" variant="outlined">{opt.value}</Tag>
+            <Tag style={{ borderRadius: 20 }} color="purple" variant="outlined">{opt.value}</Tag>
           </div>,
         }))}
         style={{ width: 140 }}
@@ -66,7 +81,7 @@ export function SizeSelector({ value, onChange }: SizeSelectorProps) {
           }
         }}
         showSearch
-                    variant="filled" 
+        variant="filled"
       />
     </Space.Compact>
   );
