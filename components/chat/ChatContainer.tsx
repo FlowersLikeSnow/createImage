@@ -2,9 +2,9 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Sender } from '@ant-design/x';
-import { Button, Spin, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNumber, Menu, message } from 'antd';
+import { Button, Spin, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNumber, Menu, message, Card } from 'antd';
 import { PaperClipOutlined } from '@ant-design/icons';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Bot, Coins } from 'lucide-react';
 import { useGenerate } from '@/hooks/useGenerate';
 import { useAuth } from '@/components/auth/AuthContext';
 import { UserAvatar } from '@/components/auth/UserAvatar';
@@ -198,6 +198,17 @@ export function ChatContainer() {
     <div className="flex h-screen">
       {/* 左侧菜单列表 */}
       <div className="w-[160px] bg-[#F3F5F7] flex flex-col">
+        {/* 顶部 AI 标识 */}
+        <div className="px-[10px] py-[6px] border-gray-200">
+          <Flex align="center" gap="small">
+            <div className='w-[24px] h-[24px] rounded-[8px] bg-[#531dab] from-sky-500 to-indigo-600 flex items-center justify-center shadow-md shadow-sky-500/10 shrink-0'>
+              <Sparkles size={14} color='#fff' strokeWidth={1} />
+            </div>
+            <Typography.Text className="text-sm font-medium">GPT-Image-2</Typography.Text>
+          </Flex>
+        </div>
+
+        {/* 菜单 */}
         <Menu
           mode="inline"
           selectedKeys={[activeMenu]}
@@ -206,6 +217,41 @@ export function ChatContainer() {
           style={{ border: 'none', background: '#F3F5F7' }}
           className="compact-menu"
         />
+
+        {/* 底部状态面板 */}
+        <div className="mt-auto p-[10px] py-[6px] border-gray-200 bg-white">
+          <Card size="small" className="bg-gray-50">
+            <div className="space-y-3">
+              {/* 进行中任务 */}
+              <Flex justify="space-between" align="center">
+                <div className="text-[12px] text-[#666] font-[500]">进行中任务</div>
+                <div className="text-[12px] text-gray-500">
+                  <span className="font-medium">{images.filter(i => i.status === 'processing').length}</span>
+                </div>
+              </Flex>
+              {/* 剩余积分 */}
+              <Flex justify="space-between" align="center">
+                <div className="text-[12px] text-[#666] font-[500]">剩余积分</div>
+                <div className="text-[12px] font-medium text-orange-500">
+                  {user?.credits?.toFixed(2) || '0.00'}
+                </div>
+              </Flex>
+              <Flex justify="center" align="center" gap="small">
+                <Button size="small" shape="round" color='geekblue' variant="filled"
+                  style={{ fontSize: 12 }}
+                  icon={<Coins size={12} color='#531dab' strokeWidth={1} />}>
+                  兑换
+                </Button>
+                <Button size="small" shape="round" color='orange' variant="filled"
+                  style={{ fontSize: 12 }}
+                  disabled
+                  icon={<Sparkles size={12} color='#531dab' strokeWidth={1} />}>
+                  充值
+                </Button>
+              </Flex>
+            </div>
+          </Card>
+        </div>
       </div>
 
       {/* 主区域 */}
@@ -260,11 +306,11 @@ export function ChatContainer() {
                 return <Flex justify="space-between" align="center">
                   <Flex gap="small" align="center">
                     <Tooltip title="仅图片上传,图片大小限制5MB">
-                      <Button shape='circle' type="text" icon={<PaperClipOutlined />} />
+                      <Button shape='circle' disabled type="text" icon={<PaperClipOutlined />} />
                     </Tooltip>
                     <Button
                       color={expandLoading ? 'purple' : 'default'}
-                      variant="filled" shape='round' loading={expandLoading} 
+                      variant="filled" shape='round' loading={expandLoading}
                       icon={<Sparkles size={12} />} onClick={handleExpand}>
                       扩写
                     </Button>
@@ -283,7 +329,7 @@ export function ChatContainer() {
                   </Flex>
                   <Flex align="center">
                     <Tooltip title={`语音输入提示词,需要给予麦克风权限`}>
-                    <SpeechButton shape='round' />
+                      <SpeechButton shape='round' />
                     </Tooltip>
                     <Divider orientation="vertical" />
                     <Tooltip title={`生成${numImages}张图片,最多10张`}>

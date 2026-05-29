@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
           email: user.email,
           nickname: user.nickname,
           avatar: user.avatar,
+          credits: user.credits,
           createdAt: user.createdAt,
           lastLoginAt: user.lastLoginAt,
         },

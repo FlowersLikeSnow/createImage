@@ -25,6 +25,7 @@ db.exec(`
     password_hash TEXT NOT NULL,
     nickname TEXT NOT NULL,
     avatar TEXT,
+    credits REAL DEFAULT 0.1,
     created_at INTEGER NOT NULL,
     last_login_at INTEGER,
     last_login_ip TEXT
@@ -44,7 +45,33 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 `);
 
+// 添加 credits 列（如果不存在）
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN credits REAL DEFAULT 0.1`);
+} catch (e) {
+  // 列已存在，忽略错误
+}
+
 console.log('[SQLite] Database initialized at:', DB_PATH);
+
+// 默认积分
+const DEFAULT_CREDITS = 0.1;
+
+// 积分扣除规则：根据图片尺寸等级
+const CREDIT_RULES: Record<string, number> = {
+  '1K': 0.1,
+  '2K': 0.2,
+  '4K': 0.3,
+};
+
+// 根据分辨率获取尺寸等级
+function getSizeLevel(size: string): string {
+  const [width, height] = size.split('x').map(Number);
+  const maxDim = Math.max(width, height);
+  if (maxDim <= 2048) return '1K';
+  if (maxDim <= 2880) return '2K';
+  return '4K';
+}
 
 // 用户操作
 export const users = {
@@ -56,16 +83,17 @@ export const users = {
     const id = nanoid();
     const now = Date.now();
     const stmt = db.prepare(`
-      INSERT INTO users (id, email, password_hash, nickname, created_at)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO users (id, email, password_hash, nickname, credits, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
-    stmt.run(id, data.email, data.passwordHash, data.nickname, now);
-    console.log('[SQLite] Created user:', id, data.email);
+    stmt.run(id, data.email, data.passwordHash, data.nickname, DEFAULT_CREDITS, now);
+    console.log('[SQLite] Created user:', id, data.email, 'with credits:', DEFAULT_CREDITS);
     return {
       id,
       email: data.email,
       passwordHash: data.passwordHash,
       nickname: data.nickname,
+      credits: DEFAULT_CREDITS,
       createdAt: now,
     };
   },
@@ -80,6 +108,7 @@ export const users = {
       passwordHash: row.password_hash,
       nickname: row.nickname,
       avatar: row.avatar,
+      credits: row.credits ?? DEFAULT_CREDITS,
       createdAt: row.created_at,
       lastLoginAt: row.last_login_at,
       lastLoginIp: row.last_login_ip,
@@ -96,6 +125,7 @@ export const users = {
       passwordHash: row.password_hash,
       nickname: row.nickname,
       avatar: row.avatar,
+      credits: row.credits ?? DEFAULT_CREDITS,
       createdAt: row.created_at,
       lastLoginAt: row.last_login_at,
       lastLoginIp: row.last_login_ip,
@@ -118,6 +148,10 @@ export const users = {
       fields.push('last_login_ip = ?');
       values.push(data.lastLoginIp);
     }
+    if (data.credits !== undefined) {
+      fields.push('credits = ?');
+      values.push(data.credits);
+    }
 
     if (fields.length === 0) return users.getById(id);
 
@@ -127,6 +161,29 @@ export const users = {
     console.log('[SQLite] Updated user:', id);
     return users.getById(id);
   },
+
+  // 扣除积分（根据图片尺寸和数量）
+  deductCredits: (id: string, imageSize: string, count: number = 1): { success: boolean; credits?: number; error?: string } => {
+    const user = users.getById(id);
+    if (!user) {
+      return { success: false, error: '用户不存在' };
+    }
+
+    const level = getSizeLevel(imageSize);
+    const deductAmount = (CREDIT_RULES[level] || 0.1) * count;
+
+    if (user.credits < deductAmount) {
+      return { success: false, error: '积分不足' };
+    }
+
+    const newCredits = user.credits - deductAmount;
+    users.update(id, { credits: newCredits });
+    console.log('[SQLite] Deducted credits:', deductAmount, 'for user:', id, 'new credits:', newCredits);
+    return { success: true, credits: newCredits };
+  },
+
+  // 获取积分扣除规则
+  getCreditRules: () => CREDIT_RULES,
 };
 
 // 会话操作

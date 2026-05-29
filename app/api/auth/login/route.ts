@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
           email: user.email,
           nickname: user.nickname,
           avatar: user.avatar,
+          credits: user.credits,
         },
         token,
       },

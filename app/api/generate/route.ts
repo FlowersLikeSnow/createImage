@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateImage } from '@/lib/ai';
 import { conversations, messages } from '@/lib/db';
-import { DEFAULT_IMAGE_SIZE } from '@/lib/utils/size-config';
+import { users } from '@/lib/db/sqlite';
+import { DEFAULT_IMAGE_SIZE, getSizeLevel } from '@/lib/utils/size-config';
 import { saveImageLocally } from '@/lib/utils/image-storage';
 import { verifyAuth, withAuthResponse } from '@/lib/auth/middleware';
 
@@ -19,6 +20,35 @@ export async function POST(request: NextRequest) {
     if (!prompt) {
       return NextResponse.json({ error: '缺少提示词' }, { status: 400 });
     }
+
+    // 检查用户积分是否足够
+    const user = users.getById(authResult.userId!);
+    if (!user) {
+      return NextResponse.json({ error: '用户不存在' }, { status: 404 });
+    }
+
+    const sizeLevel = getSizeLevel(imageSize || DEFAULT_IMAGE_SIZE);
+    const creditPerImage = sizeLevel === '1K' ? 0.1 : sizeLevel === '2K' ? 0.2 : 0.3;
+    const count = Math.min(Math.max(numImages || 1, 1), 10);
+    const totalCreditsNeeded = creditPerImage * count;
+
+    if (user.credits < totalCreditsNeeded) {
+      return NextResponse.json({
+        success: false,
+        error: `积分不足，需要 ${totalCreditsNeeded.toFixed(2)} 积分，当前剩余 ${user.credits.toFixed(2)} 积分`,
+      }, { status: 400 });
+    }
+
+    // 先扣除积分
+    const deductResult = users.deductCredits(authResult.userId!, imageSize || DEFAULT_IMAGE_SIZE, count);
+    if (!deductResult.success) {
+      return NextResponse.json({
+        success: false,
+        error: deductResult.error || '积分扣除失败',
+      }, { status: 400 });
+    }
+    let remainingCredits = deductResult.credits!;
+    console.log('[API /generate] Pre-deducted credits:', totalCreditsNeeded, 'for', count, 'images');
 
     // 创建或获取对话
     let convId = conversationId;
@@ -43,9 +73,6 @@ export async function POST(request: NextRequest) {
       imageSize: imageSize || DEFAULT_IMAGE_SIZE,
       status: 'completed',
     });
-
-    // 确定生成数量，默认1张，最多10张
-    const count = Math.min(Math.max(numImages || 1, 1), 10);
 
     // 创建多个AI消息（pending状态），每个对应一张图片
     const aiMsgIds: string[] = [];
@@ -128,6 +155,20 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // 失败的图片还原积分
+    const failedCount = errors.length;
+    const creditsRefunded = failedCount * creditPerImage;
+    if (failedCount > 0) {
+      const updatedUser = users.getById(authResult.userId!);
+      if (updatedUser) {
+        remainingCredits = updatedUser.credits + creditsRefunded;
+        users.update(authResult.userId!, { credits: remainingCredits });
+        console.log('[API /generate] Refunded credits:', creditsRefunded, 'for', failedCount, 'failed images');
+      }
+    }
+
+    const creditsDeducted = (count - failedCount) * creditPerImage;
+
     return NextResponse.json({
       success: true,
       data: {
@@ -136,6 +177,10 @@ export async function POST(request: NextRequest) {
         images,
         errors,
         revisedPrompt: results[0]?.status === 'fulfilled' ? results[0].value.revisedPrompt : undefined,
+        credits: {
+          deducted: creditsDeducted,
+          remaining: remainingCredits,
+        },
       },
     });
   } catch (error) {

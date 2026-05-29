@@ -4,6 +4,7 @@ export interface User {
   passwordHash: string;
   nickname: string;
   avatar?: string;
+  credits: number;          // 用户积分
   createdAt: number;
   lastLoginAt?: number;
   lastLoginIp?: string;
