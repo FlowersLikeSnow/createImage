@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Avatar, Dropdown, Button, Tag } from 'antd';
-import { UserOutlined, SettingOutlined, LogoutOutlined, CrownOutlined } from '@ant-design/icons';
+import { UserOutlined, SettingOutlined, LogoutOutlined, CrownOutlined, SettingFilled } from '@ant-design/icons';
 import { useAuth } from './AuthContext';
 
 export function UserAvatar() {
@@ -30,12 +31,6 @@ export function UserAvatar() {
 
   const menuItems = [
     {
-      key: 'profile',
-      icon: <UserOutlined />,
-      label: '个人中心',
-      onClick: showProfileModal,
-    },
-    {
       key: 'nickname',
       label: (
         <div className="flex flex-col gap-1">
@@ -47,6 +42,18 @@ export function UserAvatar() {
       ),
       disabled: true,
     },
+    {
+      key: 'profile',
+      icon: <UserOutlined />,
+      label: '个人中心',
+      onClick: showProfileModal,
+    },
+    // 管理员显示管理后台入口
+    ...(user.role === 'admin' ? [{
+      key: 'admin',
+      icon: <SettingOutlined />,
+      label: <Link href="/admin" className="text-gray-700">管理后台</Link>,
+    }] : []),
     { type: 'divider' as const, key: 'd1' },
     {
       key: 'logout',

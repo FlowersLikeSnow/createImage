@@ -95,7 +95,8 @@ export function RedeemModal({ visible, onClose, onSuccess }: RedeemModalProps) {
   };
 
   // 验证兑换码是否完整
-  const isCodeComplete = code.length === 18; // GIFT-XXXX-XXXXX-XXXX
+  // 格式: GIFT-XXXX-XXXXX-XXXX (共 20 字符，含分隔符)
+  const isCodeComplete = code.length === 20;
 
   return (
     <Modal
@@ -122,7 +123,7 @@ export function RedeemModal({ visible, onClose, onSuccess }: RedeemModalProps) {
           onChange={handleCodeChange}
           size="large"
           className="text-center font-mono"
-          maxLength={18}
+          maxLength={20}
           prefix={<GiftOutlined className="text-gray-400" />}
           status={code && !isCodeComplete ? 'warning' : undefined}
         />
