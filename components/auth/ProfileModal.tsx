@@ -41,7 +41,6 @@ export function ProfileModal() {
       onCancel={handleCancel}
       footer={null}
       width={400}
-      destroyOnHidden
     >
       <Form layout="vertical" className="mt-4">
         <Form.Item label="邮箱">

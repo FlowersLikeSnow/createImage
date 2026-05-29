@@ -6,12 +6,12 @@ import { useAuth } from './AuthContext';
 import { CaptchaInput } from './CaptchaInput';
 
 interface RegisterModalProps {
+  visible: boolean;
   onSwitchToLogin: () => void;
 }
 
-export function RegisterModal({ onSwitchToLogin }: RegisterModalProps) {
+export function RegisterModal({ visible, onSwitchToLogin }: RegisterModalProps) {
   const { register } = useAuth();
-  const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [captchaId, setCaptchaId] = useState<string>('');
   const [captchaImage, setCaptchaImage] = useState<string>('');
@@ -63,16 +63,13 @@ export function RegisterModal({ onSwitchToLogin }: RegisterModalProps) {
     } else {
       message.success('注册成功');
       setForm({ email: '', password: '', nickname: '', captchaCode: '' });
-      setVisible(false);
     }
   };
 
   const handleCancel = () => {
-    setVisible(false);
+    onSwitchToLogin();
     setForm({ email: '', password: '', nickname: '', captchaCode: '' });
   };
-
-  const show = () => setVisible(true);
 
   return (
     <Modal
@@ -81,7 +78,6 @@ export function RegisterModal({ onSwitchToLogin }: RegisterModalProps) {
       onCancel={handleCancel}
       footer={null}
       width={400}
-      destroyOnHidden
     >
       <Form layout="vertical" className="mt-4">
         <Form.Item label="邮箱" required>
@@ -131,14 +127,4 @@ export function RegisterModal({ onSwitchToLogin }: RegisterModalProps) {
       </Form>
     </Modal>
   );
-}
-
-export function useRegisterModal() {
-  const [visible, setVisible] = useState(false);
-
-  return {
-    visible,
-    show: () => setVisible(true),
-    hide: () => setVisible(false),
-  };
 }
