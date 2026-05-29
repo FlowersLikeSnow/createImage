@@ -301,7 +301,8 @@ export function ChatContainer() {
               placeholder="输入提示词描述你想要生成的图片..."
               suffix={false}
               autoSize={{ minRows: 4, maxRows: 8 }}
-              footer={(actionNode) => {
+              footer={(actionNode, info) => {
+                const { SendButton, LoadingButton, ClearButton, SpeechButton } = info.components;
                 return <Flex justify="space-between" align="center">
                   <Flex gap="small" align="center">
                     <Tooltip title="仅图片上传,图片大小限制5MB">
@@ -326,6 +327,10 @@ export function ChatContainer() {
                     </label>
                   </Flex>
                   <Flex align="center">
+                    <Tooltip title={`语音输入提示词,需要给予麦克风权限`}>
+                    <SpeechButton shape='round' />
+                    </Tooltip>
+                    <Divider orientation="vertical" />
                     <Tooltip title={`生成${numImages}张图片,最多10张`}>
                       <InputNumber
                         mode="spinner"
@@ -346,7 +351,7 @@ export function ChatContainer() {
                       />
                     </Tooltip>
                     <Divider orientation="vertical" />
-                    {actionNode}
+                    <SendButton disabled={inputValue.trim() === '' || expandLoading || loading} />
                   </Flex>
                 </Flex>;
               }}
