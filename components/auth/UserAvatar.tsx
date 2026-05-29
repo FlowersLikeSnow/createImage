@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Avatar, Dropdown, Button } from 'antd';
-import { UserOutlined, SettingOutlined, LogoutOutlined } from '@ant-design/icons';
+import { Avatar, Dropdown, Button, Tag } from 'antd';
+import { UserOutlined, SettingOutlined, LogoutOutlined, CrownOutlined } from '@ant-design/icons';
 import { useAuth } from './AuthContext';
 
 export function UserAvatar() {
@@ -21,6 +21,13 @@ export function UserAvatar() {
     );
   }
 
+  // 角色显示配置
+  const roleConfig = {
+    admin: { text: '管理员', color: 'gold', icon: <CrownOutlined /> },
+    user: { text: '普通用户', color: 'blue', icon: <UserOutlined /> },
+  };
+  const roleInfo = roleConfig[user.role] || roleConfig.user;
+
   const menuItems = [
     {
       key: 'profile',
@@ -30,7 +37,14 @@ export function UserAvatar() {
     },
     {
       key: 'nickname',
-      label: <span className="text-gray-500 text-xs">{user.nickname}</span>,
+      label: (
+        <div className="flex flex-col gap-1">
+          <span className="text-gray-700 text-sm font-medium">{user.nickname}</span>
+          <Tag color={roleInfo.color} icon={roleInfo.icon} className="text-xs">
+            {roleInfo.text}
+          </Tag>
+        </div>
+      ),
       disabled: true,
     },
     { type: 'divider' as const, key: 'd1' },
@@ -51,7 +65,8 @@ export function UserAvatar() {
     >
       <div className="flex items-center gap-2 cursor-pointer">
         <Avatar
-          className="bg-blue-500 cursor-pointer"
+          className={user.role === 'admin' ? 'bg-gold-500 cursor-pointer' : 'bg-blue-500 cursor-pointer'}
+          style={user.role === 'admin' ? { backgroundColor: '#faad14' } : {}}
           icon={<UserOutlined />}
         >
           {user.nickname?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase()}
@@ -59,6 +74,9 @@ export function UserAvatar() {
         <span className="text-white text-sm hidden sm:inline">
           {user.nickname}
         </span>
+        {/* {user.role === 'admin' && (
+          <CrownOutlined className="text-gold-400 hidden sm:inline" style={{ color: '#faad14' }} />
+        )} */}
       </div>
     </Dropdown>
   );

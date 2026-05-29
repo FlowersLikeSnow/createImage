@@ -77,6 +77,7 @@ export async function POST(request: NextRequest) {
           nickname: user.nickname,
           avatar: user.avatar,
           credits: user.credits,
+          role: user.role,
         },
         token,
       },

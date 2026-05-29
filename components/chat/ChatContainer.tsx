@@ -8,6 +8,7 @@ import { Sparkles, Bot, Coins } from 'lucide-react';
 import { useGenerate } from '@/hooks/useGenerate';
 import { useAuth } from '@/components/auth/AuthContext';
 import { UserAvatar } from '@/components/auth/UserAvatar';
+import { RedeemModal } from '@/components/redemption/RedeemModal';
 import { fetchWithAuth } from '@/lib/api/client';
 import type { Message } from '@/types/conversation';
 import { DEFAULT_IMAGE_SIZE, getCreditBySize } from '@/lib/utils/size-config';
@@ -30,6 +31,7 @@ export function ChatContainer() {
   const [expandLoading, setExpandLoading] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [loadingImages, setLoadingImages] = useState(true);
+  const [redeemModalVisible, setRedeemModalVisible] = useState(false);
 
   const loadImages = useCallback(async () => {
     setLoadingImages(true);
@@ -194,6 +196,18 @@ export function ChatContainer() {
     }
   }, []);
 
+  // 兑换成功后刷新用户信息
+  const handleRedeemSuccess = useCallback((credits: number, totalCredits: number) => {
+    // 更新本地用户积分显示（实际数据会在 checkAuth 中刷新）
+    message.success(`成功兑换 ${credits} 积分，当前总积分: ${totalCredits.toFixed(2)}`);
+  }, []);
+
+  // 打开兑换弹窗
+  const handleOpenRedeem = useCallback(() => {
+    if (!requireAuth()) return;
+    setRedeemModalVisible(true);
+  }, [requireAuth]);
+
   return (
     <div className="flex h-screen">
       {/* 左侧菜单列表 */}
@@ -239,7 +253,8 @@ export function ChatContainer() {
               <Flex justify="center" align="center" gap="small">
                 <Button size="small" shape="round" color='geekblue' variant="filled"
                   style={{ fontSize: 12 }}
-                  icon={<Coins size={12} color='#531dab' strokeWidth={1} />}>
+                  icon={<Coins size={12} color='#531dab' strokeWidth={1} />}
+                  onClick={handleOpenRedeem}>
                   兑换
                 </Button>
                 <Tooltip title="暂未开放">
@@ -369,6 +384,13 @@ export function ChatContainer() {
           </div>
         </div>
       </div>
+
+      {/* 兑换弹窗 */}
+      <RedeemModal
+        visible={redeemModalVisible}
+        onClose={() => setRedeemModalVisible(false)}
+        onSuccess={handleRedeemSuccess}
+      />
     </div>
   );
 }

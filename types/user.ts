@@ -1,3 +1,5 @@
+export type UserRole = 'user' | 'admin';
+
 export interface User {
   id: string;
   email: string;
@@ -5,6 +7,7 @@ export interface User {
   nickname: string;
   avatar?: string;
   credits: number;          // 用户积分
+  role: UserRole;           // 用户角色
   createdAt: number;
   lastLoginAt?: number;
   lastLoginIp?: string;
