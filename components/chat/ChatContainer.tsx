@@ -8,6 +8,7 @@ import { useGenerate } from '@/hooks/useGenerate';
 import type { Message } from '@/types/conversation';
 import { DEFAULT_IMAGE_SIZE } from '@/lib/utils/size-config';
 import { SizeSelector } from './SizeSelector';
+import { Sparkles } from 'lucide-react';
 
 // 菜单路由配置
 const menuItems = [
@@ -125,7 +126,7 @@ export function ChatContainer() {
       const response = await fetch('/api/prompt/expand', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: inputValue.trim() }),
+        body: JSON.stringify({ prompt: `${inputValue.trim()}` }),
       });
       const data = await response.json();
       if (data.success) {
@@ -301,8 +302,8 @@ export function ChatContainer() {
               placeholder="输入提示词描述你想要生成的图片..."
               suffix={false}
               autoSize={{ minRows: 4, maxRows: 8 }}
-              footer={(actionNode, info) => {
-                const { SendButton, LoadingButton, ClearButton, SpeechButton } = info.components;
+              footer={(_, info) => {
+                const { SendButton, SpeechButton } = info.components;
                 return <Flex justify="space-between" align="center">
                   <Flex gap="small" align="center">
                     <Tooltip title="仅图片上传,图片大小限制5MB">
@@ -310,7 +311,8 @@ export function ChatContainer() {
                     </Tooltip>
                     <Button
                       color={expandLoading ? 'purple' : 'default'}
-                      variant="filled" shape='round' loading={expandLoading} icon={<OpenAIOutlined />} onClick={handleExpand}>
+                      variant="filled" shape='round' loading={expandLoading} 
+                      icon={<Sparkles size={12} />} onClick={handleExpand}>
                       扩写
                     </Button>
                     <SizeSelector value={imageSize} onChange={setImageSize} />
