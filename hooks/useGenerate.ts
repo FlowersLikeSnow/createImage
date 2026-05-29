@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { DEFAULT_IMAGE_SIZE } from '@/lib/utils/size-config';
+import { fetchWithAuth } from '@/lib/api/client';
 
 interface GenerateParams {
   prompt: string;
@@ -24,11 +25,9 @@ export function useGenerate() {
   const [result, setResult] = useState<GenerateResult | null>(null);
 
   const generate = async (params: GenerateParams): Promise<GenerateResult | null> => {
-    // 发送请求时不设置 loading，让调用方自行处理
     try {
-      const response = await fetch('/api/generate', {
+      const response = await fetchWithAuth('/api/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: params.prompt,
           imageSize: params.imageSize || DEFAULT_IMAGE_SIZE,
@@ -52,7 +51,6 @@ export function useGenerate() {
     }
   };
 
-  // 仅用于发送按钮的短暂 loading
   const startSending = () => setLoading(true);
   const stopSending = () => setLoading(false);
 

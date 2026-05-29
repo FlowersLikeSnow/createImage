@@ -8,6 +8,7 @@ import { Sparkles } from 'lucide-react';
 import { useGenerate } from '@/hooks/useGenerate';
 import { useAuth } from '@/components/auth/AuthContext';
 import { UserAvatar } from '@/components/auth/UserAvatar';
+import { fetchWithAuth } from '@/lib/api/client';
 import type { Message } from '@/types/conversation';
 import { DEFAULT_IMAGE_SIZE } from '@/lib/utils/size-config';
 import { SizeSelector } from './SizeSelector';
@@ -20,7 +21,7 @@ const menuItems = [
 
 export function ChatContainer() {
   const { loading, generate, startSending, stopSending } = useGenerate();
-  const { requireAuth } = useAuth();
+  const { requireAuth, user } = useAuth();
   const [numImages, setNumImages] = useState(1);
   const [keepPrompt, setKeepPrompt] = useState(false);
   const [images, setImages] = useState<Message[]>([]);
@@ -38,7 +39,7 @@ export function ChatContainer() {
   const loadImages = useCallback(async () => {
     setLoadingImages(true);
     try {
-      const response = await fetch('/api/images');
+      const response = await fetchWithAuth('/api/images');
       const data = await response.json();
       if (data.success) {
         setImages(data.data);
@@ -63,6 +64,7 @@ export function ChatContainer() {
       tempIds.push(tempId);
       pendingCards.push({
         id: tempId,
+        userId: user?.id || '',
         conversationId: 'pending',
         role: 'assistant',
         content: prompt.trim(),
@@ -93,6 +95,7 @@ export function ChatContainer() {
           // 添加成功的图片
           const successImages: Message[] = result.images.map((img, idx) => ({
             id: img.messageId,
+            userId: user?.id || '',
             conversationId: result.conversationId,
             role: 'assistant',
             content: img.prompt,
@@ -104,6 +107,7 @@ export function ChatContainer() {
           // 添加失败的图片
           const failedImages: Message[] = result.errors.map((err, idx) => ({
             id: err.messageId,
+            userId: user?.id || '',
             conversationId: result.conversationId,
             role: 'assistant',
             content: prompt.trim(),
@@ -121,7 +125,7 @@ export function ChatContainer() {
         ));
       }
     });
-  }, [imageSize, numImages, keepPrompt, generate, startSending, stopSending, requireAuth]);
+  }, [imageSize, numImages, keepPrompt, generate, startSending, stopSending, requireAuth, user]);
 
   // 扩写提示词
   const handleExpand = useCallback(async () => {
@@ -129,9 +133,8 @@ export function ChatContainer() {
     if (!requireAuth()) return;  // 未登录则弹出登录弹窗
     setExpandLoading(true);
     try {
-      const response = await fetch('/api/prompt/expand', {
+      const response = await fetchWithAuth('/api/prompt/expand', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: `${inputValue.trim()}` }),
       });
       const data = await response.json();
@@ -151,7 +154,7 @@ export function ChatContainer() {
   // 删除图片
   const handleDelete = useCallback(async (imageId: string) => {
     try {
-      const response = await fetch(`/api/images/${imageId}`, {
+      const response = await fetchWithAuth(`/api/images/${imageId}`, {
         method: 'DELETE',
       });
       const data = await response.json();
