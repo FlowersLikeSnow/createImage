@@ -1,6 +1,5 @@
 export { AuthProvider, useAuth } from './AuthContext';
-export { LoginModal } from './LoginModal';
-export { RegisterModal } from './RegisterModal';
+export { AuthModal } from './AuthModal';
 export { UserAvatar } from './UserAvatar';
 export { ProfileModal } from './ProfileModal';
 export { CaptchaInput } from './CaptchaInput';
