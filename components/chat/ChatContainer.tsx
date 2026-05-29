@@ -10,7 +10,7 @@ import { useAuth } from '@/components/auth/AuthContext';
 import { UserAvatar } from '@/components/auth/UserAvatar';
 import { fetchWithAuth } from '@/lib/api/client';
 import type { Message } from '@/types/conversation';
-import { DEFAULT_IMAGE_SIZE, getSizeLevel } from '@/lib/utils/size-config';
+import { DEFAULT_IMAGE_SIZE, getCreditBySize } from '@/lib/utils/size-config';
 import { SizeSelector } from './SizeSelector';
 import { ImageCard } from './ImageCard';
 
@@ -357,8 +357,8 @@ export function ChatContainer() {
                     
                   <Tooltip placement='topRight' title={
                       numImages === 1
-                        ? `单次生成 (预估 ${(getSizeLevel(imageSize) === '1K' ? 0.1 : getSizeLevel(imageSize) === '2K' ? 0.2 : 0.3).toFixed(1)} 积分)`
-                        : `并发生成 ${numImages} 张 (预估 ${((getSizeLevel(imageSize) === '1K' ? 0.1 : getSizeLevel(imageSize) === '2K' ? 0.2 : 0.3) * numImages).toFixed(1)} 积分)`
+                        ? `单次生成 (预估 ${getCreditBySize(imageSize).toFixed(1)} 积分)`
+                        : `并发生成 ${numImages} 张 (预估 ${(getCreditBySize(imageSize) * numImages).toFixed(1)} 积分)`
                     }>
                     <SendButton disabled={inputValue.trim() === '' || expandLoading || loading} />
                     </Tooltip>

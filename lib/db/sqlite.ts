@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { nanoid } from 'nanoid';
 import type { User, Session } from '@/types/user';
+import { DEFAULT_CREDITS, CREDIT_CONFIG, getCreditByLevel, getSizeLevel } from '@/lib/utils/size-config';
 
 // 数据库文件路径
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -53,25 +54,6 @@ try {
 }
 
 console.log('[SQLite] Database initialized at:', DB_PATH);
-
-// 默认积分
-const DEFAULT_CREDITS = 0.1;
-
-// 积分扣除规则：根据图片尺寸等级
-const CREDIT_RULES: Record<string, number> = {
-  '1K': 0.1,
-  '2K': 0.2,
-  '4K': 0.3,
-};
-
-// 根据分辨率获取尺寸等级
-function getSizeLevel(size: string): string {
-  const [width, height] = size.split('x').map(Number);
-  const maxDim = Math.max(width, height);
-  if (maxDim <= 2048) return '1K';
-  if (maxDim <= 2880) return '2K';
-  return '4K';
-}
 
 // 用户操作
 export const users = {
@@ -170,7 +152,7 @@ export const users = {
     }
 
     const level = getSizeLevel(imageSize);
-    const deductAmount = (CREDIT_RULES[level] || 0.1) * count;
+    const deductAmount = (CREDIT_CONFIG[level as keyof typeof CREDIT_CONFIG] || CREDIT_CONFIG['1K']) * count;
 
     if (user.credits < deductAmount) {
       return { success: false, error: '积分不足' };
@@ -183,7 +165,7 @@ export const users = {
   },
 
   // 获取积分扣除规则
-  getCreditRules: () => CREDIT_RULES,
+  getCreditRules: () => CREDIT_CONFIG,
 };
 
 // 会话操作

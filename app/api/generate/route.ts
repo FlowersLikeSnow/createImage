@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateImage } from '@/lib/ai';
 import { conversations, messages } from '@/lib/db';
 import { users } from '@/lib/db/sqlite';
-import { DEFAULT_IMAGE_SIZE, getSizeLevel } from '@/lib/utils/size-config';
+import { DEFAULT_IMAGE_SIZE, getCreditBySize } from '@/lib/utils/size-config';
 import { saveImageLocally } from '@/lib/utils/image-storage';
 import { verifyAuth, withAuthResponse } from '@/lib/auth/middleware';
 
@@ -27,8 +27,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '用户不存在' }, { status: 404 });
     }
 
-    const sizeLevel = getSizeLevel(imageSize || DEFAULT_IMAGE_SIZE);
-    const creditPerImage = sizeLevel === '1K' ? 0.1 : sizeLevel === '2K' ? 0.2 : 0.3;
+    const creditPerImage = getCreditBySize(imageSize || DEFAULT_IMAGE_SIZE);
     const count = Math.min(Math.max(numImages || 1, 1), 10);
     const totalCreditsNeeded = creditPerImage * count;
 

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Select, Space, Tag } from 'antd';
-import { DEFAULT_IMAGE_SIZE, getSizesByLevel } from '@/lib/utils/size-config';
+import { DEFAULT_IMAGE_SIZE, getSizesByLevel, CREDIT_CONFIG } from '@/lib/utils/size-config';
 
 interface SizeSelectorProps {
   value?: string;

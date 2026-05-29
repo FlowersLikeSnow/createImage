@@ -1,5 +1,26 @@
 // 图片尺寸配置
 
+// 积分配置：根据图片尺寸等级
+export const CREDIT_CONFIG = {
+  '1K': 0.15,
+  '2K': 0.25,
+  '4K': 0.35,
+};
+
+// 默认积分（注册时赠送，等于1K的积分）
+export const DEFAULT_CREDITS = CREDIT_CONFIG['1K'];
+
+// 获取尺寸等级对应的积分
+export function getCreditByLevel(level: '1K' | '2K' | '4K'): number {
+  return CREDIT_CONFIG[level] || CREDIT_CONFIG['1K'];
+}
+
+// 获取尺寸对应的积分
+export function getCreditBySize(size: string): number {
+  const level = getSizeLevel(size);
+  return getCreditByLevel(level);
+}
+
 // 1K 尺寸 (基于 1024x1024)
 export const IMAGE_SIZE_1K = [
   { value: '1024x1024', label: '1:1', ratio: '1:1' },
