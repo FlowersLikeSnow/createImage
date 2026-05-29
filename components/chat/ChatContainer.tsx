@@ -187,11 +187,13 @@ export function ChatContainer() {
         className="w-[280px] shadow-sm"
         cover={
           isProcessing ? (
-            <div className="h-[180px] flex items-center justify-center bg-gray-50">
+            <div className="h-[180px] items-center justify-center bg-gray-50"
+            style={{ display: 'flex' }}>
               <Spin description="正在生成..." />
             </div>
           ) : isFailed ? (
-            <div className="h-[180px] flex items-center justify-center bg-gray-50">
+            <div className="h-[180px] items-center justify-center bg-gray-50"
+            style={{ display: 'flex' }}>
               <Typography.Text type="danger">{img.error || '生成失败'}</Typography.Text>
             </div>
           ) : hasImage ? (
