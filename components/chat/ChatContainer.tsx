@@ -10,7 +10,7 @@ import { useAuth } from '@/components/auth/AuthContext';
 import { UserAvatar } from '@/components/auth/UserAvatar';
 import { fetchWithAuth } from '@/lib/api/client';
 import type { Message } from '@/types/conversation';
-import { DEFAULT_IMAGE_SIZE } from '@/lib/utils/size-config';
+import { DEFAULT_IMAGE_SIZE, getSizeLevel } from '@/lib/utils/size-config';
 import { SizeSelector } from './SizeSelector';
 import { ImageCard } from './ImageCard';
 
@@ -242,12 +242,14 @@ export function ChatContainer() {
                   icon={<Coins size={12} color='#531dab' strokeWidth={1} />}>
                   兑换
                 </Button>
+                <Tooltip title="暂未开放">
                 <Button size="small" shape="round" color='orange' variant="filled"
                   style={{ fontSize: 12 }}
                   disabled
                   icon={<Sparkles size={12} color='#531dab' strokeWidth={1} />}>
                   充值
                 </Button>
+                </Tooltip>
               </Flex>
             </div>
           </Card>
@@ -352,7 +354,11 @@ export function ChatContainer() {
                       />
                     </Tooltip>
                     <Divider orientation="vertical" />
+                    
+                  <Tooltip placement='topRight' title={numImages === 1 ?`单次生成:派发单个渲染任务(预估消耗${(getSizeLevel(imageSize) == '1K' ? 0.1 : getSizeLevel(imageSize) == '2K' ? 0.2 : 0.3) * numImages}积分)`:
+                  `并发生成:同时提交${numImages}个任务(预估消耗${(getSizeLevel(imageSize) == '1K' ? 0.1 : getSizeLevel(imageSize) == '2K' ? 0.2 : 0.3) * numImages}积分)`}>
                     <SendButton disabled={inputValue.trim() === '' || expandLoading || loading} />
+                    </Tooltip>
                   </Flex>
                 </Flex>;
               }}
