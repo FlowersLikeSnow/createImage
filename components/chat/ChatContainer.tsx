@@ -22,7 +22,7 @@ const menuItems = [
 
 export function ChatContainer() {
   const { loading, generate, startSending, stopSending } = useGenerate();
-  const { requireAuth, user } = useAuth();
+  const { requireAuth, user, refreshUser } = useAuth();
   const [numImages, setNumImages] = useState(1);
   const [keepPrompt, setKeepPrompt] = useState(false);
   const [images, setImages] = useState<Message[]>([]);
@@ -197,10 +197,11 @@ export function ChatContainer() {
   }, []);
 
   // 兑换成功后刷新用户信息
-  const handleRedeemSuccess = useCallback((credits: number, totalCredits: number) => {
-    // 更新本地用户积分显示（实际数据会在 checkAuth 中刷新）
+  const handleRedeemSuccess = useCallback(async (credits: number, totalCredits: number) => {
     message.success(`成功兑换 ${credits} 积分，当前总积分: ${totalCredits.toFixed(2)}`);
-  }, []);
+    // 立即刷新用户数据
+    await refreshUser();
+  }, [refreshUser]);
 
   // 打开兑换弹窗
   const handleOpenRedeem = useCallback(() => {

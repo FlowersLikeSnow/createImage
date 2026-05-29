@@ -19,6 +19,7 @@ interface AuthContextType {
   hideProfileModal: () => void;
   requireAuth: () => boolean;
   updateProfile: (nickname: string) => Promise<{ success: boolean; error?: string }>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -202,6 +203,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     hideProfileModal,
     requireAuth,
     updateProfile,
+    refreshUser: checkAuth,
   };
 
   return (
