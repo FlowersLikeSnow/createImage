@@ -10,6 +10,7 @@ import {
   HomeOutlined,
   GiftOutlined,
   UserOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 
 const { Sider, Content, Header } = Layout;
@@ -54,6 +55,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           className={pathname === '/admin' ? 'text-[#531dab] font-medium' : 'text-[#333] hover:text-[#531dab]'}
         >
           概览
+        </Link>
+      ),
+    },
+    {
+      key: '/admin/users',
+      icon: <TeamOutlined style={{ color: pathname === '/admin/users' ? '#531dab' : '#666' }} />,
+      label: (
+        <Link
+          href="/admin/users"
+          className={pathname === '/admin/users' ? 'text-[#531dab] font-medium' : 'text-[#333] hover:text-[#531dab]'}
+        >
+          用户列表
         </Link>
       ),
     },
@@ -131,7 +144,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         {/* 顶部标题栏 */}
         <Header className="bg-white border-b border-[#e8e8e8] px-[24px] h-[64px] flex items-center">
           <h1 className="text-[16px] font-semibold text-[#333] tracking-tight">
-            {pathname === '/admin' ? '概览' : pathname === '/admin/redemption' ? '兑换码管理' : '管理后台'}
+            {pathname === '/admin' ? '概览' : pathname === '/admin/users' ? '用户列表' : pathname === '/admin/redemption' ? '兑换码管理' : '管理后台'}
           </h1>
         </Header>
 
