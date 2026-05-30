@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Card, Row, Col, Statistic, Button, Spin } from 'antd';
-import { GiftOutlined, UserOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { Button, Spin } from 'antd';
+import { GiftOutlined, CheckCircleOutlined, UserOutlined, StopOutlined } from '@ant-design/icons';
 import { fetchWithAuth } from '@/lib/api/client';
 
 interface Stats {
@@ -38,67 +38,100 @@ export default function AdminHomePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center h-[400px]">
         <Spin size="large" />
       </div>
     );
   }
 
+  // 统计卡片数据
+  const statCards = [
+    {
+      key: 'total',
+      label: '兑换码总数',
+      value: stats?.total || 0,
+      icon: GiftOutlined,
+      accent: '#531dab',
+    },
+    {
+      key: 'unused',
+      label: '未使用',
+      value: stats?.unused || 0,
+      icon: CheckCircleOutlined,
+      accent: '#22c55e',
+    },
+    {
+      key: 'used',
+      label: '已使用',
+      value: stats?.used || 0,
+      icon: UserOutlined,
+      accent: '#f59e0b',
+    },
+    {
+      key: 'disabled',
+      label: '已禁用',
+      value: stats?.disabled || 0,
+      icon: StopOutlined,
+      accent: '#ef4444',
+    },
+  ];
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">管理后台</h1>
+    <div className="max-w-[1200px]">
+      {/* 统计卡片 */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-[16px] mb-[32px]">
+        {statCards.map((stat) => (
+          <div
+            key={stat.key}
+            className="bg-white rounded-[12px] p-[20px] border border-[#e8e8e8]"
+          >
+            <div className="flex items-center justify-between mb-[16px]">
+              <span className="text-[13px] text-[#666] font-medium tracking-wide uppercase">
+                {stat.label}
+              </span>
+              <stat.icon style={{ color: stat.accent, fontSize: '18px' }} />
+            </div>
+            <div className="font-mono text-[32px] font-bold text-[#333] tracking-tight">
+              {stat.value.toLocaleString()}
+            </div>
+          </div>
+        ))}
+      </div>
 
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="兑换码总数"
-              value={stats?.total || 0}
-              prefix={<GiftOutlined className="text-blue-500" />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="未使用"
-              value={stats?.unused || 0}
-              prefix={<CheckCircleOutlined className="text-green-500" />}
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="已使用"
-              value={stats?.used || 0}
-              prefix={<UserOutlined className="text-orange-500" />}
-              valueStyle={{ color: '#fa8c16' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <Card>
-            <Statistic
-              title="已禁用"
-              value={stats?.disabled || 0}
-              prefix={<CloseCircleOutlined className="text-red-500" />}
-              valueStyle={{ color: '#f5222d' }}
-            />
-          </Card>
-        </Col>
-      </Row>
-
-      <Card className="mt-6" title="快捷操作">
-        <div className="flex gap-4">
+      {/* 快捷入口 */}
+      <div className="bg-white rounded-[12px] border border-[#e8e8e8] p-[20px]">
+        <h2 className="text-[14px] text-[#666] font-medium tracking-wide uppercase mb-[16px]">
+          快捷入口
+        </h2>
+        <div className="flex gap-[12px]">
           <Link href="/admin/redemption">
-            <Button type="primary" icon={<GiftOutlined />}>
+            <Button
+              type="primary"
+              icon={<GiftOutlined />}
+              className="h-[40px] px-[20px] rounded-[8px] font-medium"
+              style={{
+                background: '#531dab',
+                borderColor: '#531dab',
+              }}
+            >
               兑换码管理
             </Button>
           </Link>
         </div>
-      </Card>
+      </div>
+
+      {/* 使用说明 */}
+      <div className="mt-[32px] bg-white rounded-[12px] border border-[#e8e8e8] p-[20px]">
+        <h2 className="text-[14px] text-[#666] font-medium tracking-wide uppercase mb-[12px]">
+          使用说明
+        </h2>
+        <div className="text-[14px] text-[#555] leading-relaxed space-y-[8px]">
+          <p>• 在「兑换码」页面可批量生成兑换码，设置积分面值和有效期</p>
+          <p>• 支持批量启用/禁用兑换码，选中后使用「功能」下拉菜单操作</p>
+          <p>• 用户在前台点击「兑换」按钮输入兑换码获取积分</p>
+          <p>• 已使用的兑换码不可更改状态</p>
+        </div>
+      </div>
     </div>
   );
 }

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Card,
   Table,
   Button,
   Modal,
@@ -16,7 +15,7 @@ import {
   Spin,
   Select,
   Dropdown,
-  Popconfirm,
+  Card,
 } from 'antd';
 import { PlusOutlined, CopyOutlined, ReloadOutlined, StopOutlined, CheckOutlined, DownOutlined, SettingOutlined } from '@ant-design/icons';
 import { fetchWithAuth } from '@/lib/api/client';
@@ -44,7 +43,6 @@ export default function RedemptionAdminPage() {
       const data = await response.json();
       if (data.success) {
         setCodes(data.data.codes);
-        // 清空选择
         setSelectedRowKeys([]);
       } else {
         message.error(data.error || '加载失败');
@@ -111,7 +109,6 @@ export default function RedemptionAdminPage() {
       return;
     }
 
-    // 检查是否有已使用的兑换码
     const selectedCodes = codes.filter(c => selectedRowKeys.includes(c.id));
     const usedCodes = selectedCodes.filter(c => c.status === 'used');
     if (usedCodes.length > 0) {
@@ -121,7 +118,6 @@ export default function RedemptionAdminPage() {
 
     setLoading(true);
     try {
-      // 批量调用 API
       const promises = selectedRowKeys.map(id =>
         fetchWithAuth('/api/admin/redemption', {
           method: 'PUT',
@@ -184,8 +180,15 @@ export default function RedemptionAdminPage() {
       setSelectedRowKeys(newSelectedRowKeys as string[]);
     },
     getCheckboxProps: (record: RedemptionCode) => ({
-      disabled: record.status === 'used', // 已使用的不能选择
+      disabled: record.status === 'used',
     }),
+  };
+
+  // 状态样式配置
+  const statusConfig = {
+    unused: { bg: '#1a2e1a', text: '#22c55e', label: '未使用' },
+    used: { bg: '#1a1a1e', text: '#888', label: '已使用' },
+    disabled: { bg: '#2e1a1a', text: '#ef4444', label: '已禁用' },
   };
 
   const columns = [
@@ -194,105 +197,151 @@ export default function RedemptionAdminPage() {
       dataIndex: 'code',
       key: 'code',
       render: (code: string) => (
-        <Space>
-          <Text copyable={{ text: code }}>{code}</Text>
-        </Space>
+        <Text
+          copyable={{ text: code }}
+          className="font-mono text-[13px] text-[#e0e0e0]"
+        >
+          {code}
+        </Text>
       ),
     },
     {
       title: '积分',
       dataIndex: 'credits',
       key: 'credits',
-      render: (credits: number) => <Tag color="blue">{credits}</Tag>,
+      render: (credits: number) => (
+        <span className="font-mono text-[14px] text-[#531dab] font-semibold">
+          {credits}
+        </span>
+      ),
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => {
-        const config = {
-          unused: { color: 'green', text: '未使用' },
-          used: { color: 'default', text: '已使用' },
-          disabled: { color: 'red', text: '已禁用' },
-        };
-        const { color, text } = config[status as keyof typeof config] || { color: 'default', text: status };
-        return <Tag color={color}>{text}</Tag>;
+        const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.used;
+        return (
+          <span
+            className="inline-flex items-center px-[8px] py-[4px] rounded-[4px] text-[12px] font-medium"
+            style={{
+              background: config.bg,
+              color: config.text,
+            }}
+          >
+            {config.label}
+          </span>
+        );
       },
     },
     {
       title: '创建时间',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (ts: number) => new Date(ts).toLocaleString('zh-CN'),
+      render: (ts: number) => (
+        <span className="text-[13px] text-[#888]">
+          {new Date(ts).toLocaleString('zh-CN')}
+        </span>
+      ),
     },
     {
       title: '过期时间',
       dataIndex: 'expiresAt',
       key: 'expiresAt',
-      render: (ts: number) => ts ? new Date(ts).toLocaleString('zh-CN') : '永久有效',
+      render: (ts: number) => (
+        <span className="text-[13px] text-[#888]">
+          {ts ? new Date(ts).toLocaleString('zh-CN') : '永久'}
+        </span>
+      ),
     },
     {
       title: '使用者',
       dataIndex: 'usedBy',
       key: 'usedBy',
-      render: (usedBy: string) => usedBy || '-',
+      render: (usedBy: string) => (
+        <span className="text-[13px] text-[#888] font-mono">
+          {usedBy || '-'}
+        </span>
+      ),
     },
     {
       title: '使用时间',
       dataIndex: 'usedAt',
       key: 'usedAt',
-      render: (ts: number) => ts ? new Date(ts).toLocaleString('zh-CN') : '-',
+      render: (ts: number) => (
+        <span className="text-[13px] text-[#888]">
+          {ts ? new Date(ts).toLocaleString('zh-CN') : '-'}
+        </span>
+      ),
     },
   ];
 
   return (
-    <div>
-      <Card
-        title="兑换码管理"
-        extra={
-          <Space>
-            <Select
-              placeholder="状态筛选"
-              allowClear
-              style={{ width: 120 }}
-              value={statusFilter}
-              onChange={(value) => setStatusFilter(value || '')}
-              options={[
-                { value: 'unused', label: '未使用' },
-                { value: 'used', label: '已使用' },
-                { value: 'disabled', label: '已禁用' },
-              ]}
-            />
-            <Button icon={<ReloadOutlined />} onClick={loadCodes}>
-              刷新
-            </Button>
-            <Dropdown menu={batchActionMenu} placement="bottomRight">
-              <Button icon={<SettingOutlined />}>
-                功能 <DownOutlined />
-              </Button>
-            </Dropdown>
+    <div className="max-w-[1200px]">
+      {/* 操作栏 */}
+      <div className="flex items-center justify-between mb-[20px]">
+        <div className="flex items-center gap-[12px]">
+          <Select
+            placeholder="状态筛选"
+            allowClear
+            style={{ width: 140 }}
+            value={statusFilter}
+            onChange={(value) => setStatusFilter(value || '')}
+            className="dark-select"
+            options={[
+              { value: 'unused', label: '未使用' },
+              { value: 'used', label: '已使用' },
+              { value: 'disabled', label: '已禁用' },
+            ]}
+          />
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={loadCodes}
+            className="h-[36px] rounded-[8px]"
+          >
+            刷新
+          </Button>
+        </div>
+        <div className="flex items-center gap-[12px]">
+          <Dropdown menu={batchActionMenu} placement="bottomRight">
             <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => setGenerateModalVisible(true)}
+              icon={<SettingOutlined />}
+              className="h-[36px] rounded-[8px] bg-[#1a1a1e] border-[#2a2a2e] text-[#888]"
             >
-              生成兑换码
+              功能 <DownOutlined />
             </Button>
-          </Space>
-        }
-      >
-        {/* 选中提示 */}
-        {selectedRowKeys.length > 0 && (
-          <div className="mb-4 p-2 bg-blue-50 rounded flex items-center justify-between">
-            <Text className="text-blue-600">
-              已选择 <Text strong>{selectedRowKeys.length}</Text> 个兑换码（已使用的不可操作）
-            </Text>
-            <Button size="small" onClick={() => setSelectedRowKeys([])}>
-              取消选择
-            </Button>
-          </div>
-        )}
+          </Dropdown>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setGenerateModalVisible(true)}
+            className="h-[36px] px-[16px] rounded-[8px] font-medium"
+            style={{ background: '#531dab', borderColor: '#531dab' }}
+          >
+            生成兑换码
+          </Button>
+        </div>
+      </div>
 
+      {/* 选中提示 */}
+      {selectedRowKeys.length > 0 && (
+        <div className="mb-[16px] p-[12px] bg-[#1a1a2e] rounded-[8px] flex items-center justify-between">
+          <span className="text-[13px] text-[#531dab]">
+            已选择 <span className="font-semibold">{selectedRowKeys.length}</span> 个兑换码
+            <span className="text-[#888] ml-[8px]">(已使用的不可操作)</span>
+          </span>
+          <Button
+            size="small"
+            onClick={() => setSelectedRowKeys([])}
+            className="h-[28px] rounded-[6px] text-[12px]"
+          >
+            取消选择
+          </Button>
+        </div>
+      )}
+
+      {/* 表格 */}
+      <Card className="rounded-[12px] overflow-hidden">
         <Table
           dataSource={codes}
           columns={columns}
@@ -304,20 +353,22 @@ export default function RedemptionAdminPage() {
             showSizeChanger: true,
             showTotal: (total) => `共 ${total} 条`,
           }}
+          className="dark-table"
         />
       </Card>
 
       {/* 生成兑换码弹窗 */}
       <Modal
-        title="生成兑换码"
+        title={<span className="text-[16px] font-semibold">生成兑换码</span>}
         open={generateModalVisible}
         onCancel={() => setGenerateModalVisible(false)}
         footer={null}
+        className="dark-modal"
       >
-        <Form form={form} layout="vertical" onFinish={handleGenerate}>
+        <Form form={form} layout="vertical" onFinish={handleGenerate} className="mt-[16px]">
           <Form.Item
             name="count"
-            label="生成数量"
+            label={<span className="text-[14px] text-[#888]">生成数量</span>}
             rules={[{ required: true, message: '请输入生成数量' }]}
           >
             <InputNumber
@@ -325,11 +376,12 @@ export default function RedemptionAdminPage() {
               max={1000}
               style={{ width: '100%' }}
               placeholder="1-1000"
+              className="h-[40px]"
             />
           </Form.Item>
           <Form.Item
             name="credits"
-            label="积分面值"
+            label={<span className="text-[14px] text-[#888]">积分面值</span>}
             rules={[{ required: true, message: '请输入积分面值' }]}
           >
             <InputNumber
@@ -337,60 +389,91 @@ export default function RedemptionAdminPage() {
               step={0.1}
               style={{ width: '100%' }}
               placeholder="每张兑换码的积分值"
+              className="h-[40px]"
             />
           </Form.Item>
-          <Form.Item name="expiresInDays" label="有效期（天）">
+          <Form.Item
+            name="expiresInDays"
+            label={<span className="text-[14px] text-[#888]">有效期（天）</span>}
+          >
             <InputNumber
               min={1}
               style={{ width: '100%' }}
               placeholder="不填则永久有效"
+              className="h-[40px]"
             />
           </Form.Item>
-          <Form.Item name="remark" label="备注">
+          <Form.Item
+            name="remark"
+            label={<span className="text-[14px] text-[#888]">备注</span>}
+          >
             <Input.TextArea rows={2} placeholder="可选备注" />
           </Form.Item>
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit" loading={loading}>
-                生成
-              </Button>
-              <Button onClick={() => setGenerateModalVisible(false)}>
+          <Form.Item className="mb-0">
+            <div className="flex gap-[12px] justify-end">
+              <Button
+                onClick={() => setGenerateModalVisible(false)}
+                className="h-[36px] rounded-[8px]"
+              >
                 取消
               </Button>
-            </Space>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={loading}
+                className="h-[36px] px-[20px] rounded-[8px] font-medium"
+                style={{ background: '#531dab', borderColor: '#531dab' }}
+              >
+                生成
+              </Button>
+            </div>
           </Form.Item>
         </Form>
       </Modal>
 
       {/* 生成结果弹窗 */}
       <Modal
-        title="生成结果"
+        title={<span className="text-[16px] font-semibold">生成结果</span>}
         open={resultModalVisible}
         onCancel={() => setResultModalVisible(false)}
         footer={
-          <Space>
-            <Button onClick={copyAllCodes} icon={<CopyOutlined />}>
+          <div className="flex gap-[12px]">
+            <Button
+              onClick={copyAllCodes}
+              icon={<CopyOutlined />}
+              className="h-[36px] rounded-[8px]"
+            >
               复制全部
             </Button>
-            <Button type="primary" onClick={() => setResultModalVisible(false)}>
+            <Button
+              type="primary"
+              onClick={() => setResultModalVisible(false)}
+              className="h-[36px] px-[20px] rounded-[8px]"
+              style={{ background: '#531dab', borderColor: '#531dab' }}
+            >
               关闭
             </Button>
-          </Space>
+          </div>
         }
-        width={600}
+        width={560}
+        className="dark-modal"
       >
-        <div className="max-h-64 overflow-auto">
-          <p className="mb-2 text-gray-500">
-            成功生成 {generatedCodes.length} 个兑换码：
+        <div className="max-h-[320px] overflow-auto">
+          <p className="text-[14px] text-[#888] mb-[12px]">
+            成功生成 {generatedCodes.length} 个兑换码
           </p>
-          <div className="space-y-1">
+          <div className="space-y-[4px]">
             {generatedCodes.map((code, index) => (
-              <div key={index} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded">
-                <Text>{code}</Text>
+              <div
+                key={index}
+                className="flex items-center justify-between bg-[#1a1a1e] px-[12px] py-[8px] rounded-[6px]"
+              >
+                <span className="font-mono text-[13px] text-[#e0e0e0]">{code}</span>
                 <Button
                   size="small"
                   icon={<CopyOutlined />}
                   onClick={() => copySingleCode(code)}
+                  className="h-[28px] rounded-[6px]"
                 />
               </div>
             ))}
