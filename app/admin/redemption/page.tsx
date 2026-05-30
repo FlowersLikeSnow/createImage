@@ -15,9 +15,10 @@ import {
   Typography,
   Spin,
   Select,
-  Popover,
+  Dropdown,
+  Popconfirm,
 } from 'antd';
-import { PlusOutlined, CopyOutlined, ReloadOutlined } from '@ant-design/icons';
+import { PlusOutlined, CopyOutlined, ReloadOutlined, StopOutlined, CheckOutlined, DownOutlined, SettingOutlined } from '@ant-design/icons';
 import { fetchWithAuth } from '@/lib/api/client';
 import type { RedemptionCode } from '@/types/redemption';
 
@@ -31,6 +32,7 @@ export default function RedemptionAdminPage() {
   const [generatedCodes, setGeneratedCodes] = useState<string[]>([]);
   const [form] = Form.useForm();
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
 
   const loadCodes = async () => {
     setLoading(true);
@@ -42,6 +44,8 @@ export default function RedemptionAdminPage() {
       const data = await response.json();
       if (data.success) {
         setCodes(data.data.codes);
+        // 清空选择
+        setSelectedRowKeys([]);
       } else {
         message.error(data.error || '加载失败');
       }
@@ -98,6 +102,90 @@ export default function RedemptionAdminPage() {
   const copySingleCode = (code: string) => {
     navigator.clipboard.writeText(code);
     message.success('已复制兑换码');
+  };
+
+  // 批量更新状态
+  const handleBatchUpdateStatus = async (status: 'unused' | 'disabled') => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('请先选择兑换码');
+      return;
+    }
+
+    // 检查是否有已使用的兑换码
+    const selectedCodes = codes.filter(c => selectedRowKeys.includes(c.id));
+    const usedCodes = selectedCodes.filter(c => c.status === 'used');
+    if (usedCodes.length > 0) {
+      message.error('已使用的兑换码不能更改状态');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // 批量调用 API
+      const promises = selectedRowKeys.map(id =>
+        fetchWithAuth('/api/admin/redemption', {
+          method: 'PUT',
+          body: JSON.stringify({ id, status }),
+        })
+      );
+
+      const results = await Promise.all(promises);
+      const successCount = results.filter(r => r.ok).length;
+
+      if (successCount === selectedRowKeys.length) {
+        message.success(`成功更新 ${successCount} 个兑换码状态`);
+        loadCodes();
+      } else {
+        message.warning(`更新完成，成功 ${successCount} 个，失败 ${selectedRowKeys.length - successCount} 个`);
+        loadCodes();
+      }
+    } catch (error) {
+      console.error('Batch update error:', error);
+      message.error('批量更新失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 批量操作下拉菜单
+  const batchActionMenu = {
+    items: [
+      {
+        key: 'enable',
+        icon: <CheckOutlined />,
+        label: '批量启用',
+        onClick: () => {
+          if (selectedRowKeys.length === 0) {
+            message.warning('请先选择兑换码');
+            return;
+          }
+          handleBatchUpdateStatus('unused');
+        },
+      },
+      {
+        key: 'disable',
+        icon: <StopOutlined />,
+        label: '批量禁用',
+        onClick: () => {
+          if (selectedRowKeys.length === 0) {
+            message.warning('请先选择兑换码');
+            return;
+          }
+          handleBatchUpdateStatus('disabled');
+        },
+      },
+    ],
+  };
+
+  // 表格多选配置
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: (newSelectedRowKeys: React.Key[]) => {
+      setSelectedRowKeys(newSelectedRowKeys as string[]);
+    },
+    getCheckboxProps: (record: RedemptionCode) => ({
+      disabled: record.status === 'used', // 已使用的不能选择
+    }),
   };
 
   const columns = [
@@ -178,6 +266,11 @@ export default function RedemptionAdminPage() {
             <Button icon={<ReloadOutlined />} onClick={loadCodes}>
               刷新
             </Button>
+            <Dropdown menu={batchActionMenu} placement="bottomRight">
+              <Button icon={<SettingOutlined />}>
+                功能 <DownOutlined />
+              </Button>
+            </Dropdown>
             <Button
               type="primary"
               icon={<PlusOutlined />}
@@ -188,11 +281,24 @@ export default function RedemptionAdminPage() {
           </Space>
         }
       >
+        {/* 选中提示 */}
+        {selectedRowKeys.length > 0 && (
+          <div className="mb-4 p-2 bg-blue-50 rounded flex items-center justify-between">
+            <Text className="text-blue-600">
+              已选择 <Text strong>{selectedRowKeys.length}</Text> 个兑换码（已使用的不可操作）
+            </Text>
+            <Button size="small" onClick={() => setSelectedRowKeys([])}>
+              取消选择
+            </Button>
+          </div>
+        )}
+
         <Table
           dataSource={codes}
           columns={columns}
           rowKey="id"
           loading={loading}
+          rowSelection={rowSelection}
           pagination={{
             pageSize: 20,
             showSizeChanger: true,

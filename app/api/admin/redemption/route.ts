@@ -16,6 +16,7 @@ function requireAdmin(userId: string): boolean {
  * 管理员兑换码接口
  * POST /api/admin/redemption - 生成兑换码
  * GET /api/admin/redemption - 查询兑换码列表
+ * PUT /api/admin/redemption - 更新兑换码状态（禁用/启用）
  */
 
 // 生成兑换码
@@ -154,6 +155,68 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: false,
       error: '查询失败',
+    }, { status: 500 });
+  }
+}
+
+// 更新兑换码状态（禁用/启用）
+export async function PUT(request: NextRequest) {
+  const authResult = await verifyAuth(request);
+  if (!authResult.success) {
+    return NextResponse.json({
+      success: false,
+      error: '未授权',
+    }, { status: 401 });
+  }
+
+  if (!requireAdmin(authResult.userId!)) {
+    return NextResponse.json({
+      success: false,
+      error: '无权限',
+    }, { status: 403 });
+  }
+
+  try {
+    const body = await request.json();
+    const { id, status } = body;
+
+    if (!id || typeof id !== 'string') {
+      return NextResponse.json({
+        success: false,
+        error: '请提供兑换码ID',
+      }, { status: 400 });
+    }
+
+    if (!status || !['unused', 'used', 'disabled'].includes(status)) {
+      return NextResponse.json({
+        success: false,
+        error: '状态值无效，必须是 unused、used 或 disabled',
+      }, { status: 400 });
+    }
+
+    const success = redemptionCodes.updateStatus(id, status);
+
+    if (!success) {
+      return NextResponse.json({
+        success: false,
+        error: '兑换码不存在或状态未改变',
+      }, { status: 400 });
+    }
+
+    console.log('[API /admin/redemption PUT] Updated code status:', id, 'to:', status);
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        id,
+        status,
+      },
+    });
+  } catch (error) {
+    console.error('[API /admin/redemption PUT] error:', error);
+    return NextResponse.json({
+      success: false,
+      error: '更新失败',
     }, { status: 500 });
   }
 }
