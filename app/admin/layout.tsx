@@ -35,7 +35,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   if (loading || !checked) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f5f5f5]">
-        <Spin size="large" tip="加载中..." />
+        <Spin size="large" description="加载中..." />
       </div>
     );
   }

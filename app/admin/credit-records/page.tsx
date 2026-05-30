@@ -6,6 +6,7 @@ import { TransactionOutlined, SearchOutlined, ArrowUpOutlined, ArrowDownOutlined
 import { fetchWithAuth } from '@/lib/api/client';
 import type { CreditRecord, CreditRecordType, CreditRecordStats } from '@/types/credit-record';
 import { CREDIT_RECORD_TYPE_NAMES } from '@/types/credit-record';
+import dayjs from 'dayjs';
 
 interface RecordWithUser extends CreditRecord {
   userNickname: string;
@@ -156,7 +157,7 @@ export default function CreditRecordsAdminPage() {
       key: 'createdAt',
       render: (ts: number) => (
         <span className="text-[13px] text-[#666]">
-          {new Date(ts).toLocaleString('zh-CN')}
+          {dayjs(ts).format('YYYY-MM-DD HH:mm:ss')}
         </span>
       ),
     },

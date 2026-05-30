@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Modal, Form, Input, Button, message, Spin } from 'antd';
 import { useAuth } from './AuthContext';
+import dayjs from 'dayjs';
 
 export function ProfileModal() {
   const { user, profileModalVisible, hideProfileModal, updateProfile } = useAuth();
@@ -55,7 +56,7 @@ export function ProfileModal() {
         </Form.Item>
         <Form.Item label="注册时间">
           <Input
-            value={user.createdAt ? new Date(user.createdAt).toLocaleString() : '-'}
+            value={user.createdAt ? dayjs(user.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
             disabled
           />
         </Form.Item>

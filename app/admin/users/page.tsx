@@ -5,6 +5,7 @@ import { Table, Spin, Tag, Button, Modal, Form, InputNumber, Input, message, Spa
 import { UserOutlined, CrownOutlined, EditOutlined } from '@ant-design/icons';
 import { fetchWithAuth } from '@/lib/api/client';
 import type { User } from '@/types/user';
+import dayjs from 'dayjs';
 
 interface UserStats {
   total: number;
@@ -172,7 +173,7 @@ export default function UsersAdminPage() {
       key: 'createdAt',
       render: (ts: number) => (
         <span className="text-[13px] text-[#666]">
-          {new Date(ts).toLocaleString('zh-CN')}
+          {dayjs(ts).format('YYYY-MM-DD HH:mm:ss')}
         </span>
       ),
     },
@@ -182,7 +183,7 @@ export default function UsersAdminPage() {
       key: 'lastLoginAt',
       render: (ts: number) => (
         <span className="text-[13px] text-[#666]">
-          {ts ? new Date(ts).toLocaleString('zh-CN') : '-'}
+          {ts ? dayjs(ts).format('YYYY-MM-DD HH:mm:ss') : '-'}
         </span>
       ),
     },

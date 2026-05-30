@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Card, Image, Spin, Typography, Tooltip, Popconfirm, Empty } from 'antd';
 import { DownloadOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { Message } from '@/types/conversation';
+import dayjs from 'dayjs';
 
 interface ImageCardProps {
   img: Message;
@@ -80,7 +81,7 @@ export function ImageCard({ img, onDownload, onDelete }: ImageCardProps) {
         }
       />
       <Typography.Text type="secondary" className="text-xs">
-        {new Date(img.createdAt).toLocaleString()}
+        {dayjs(img.createdAt).format('YYYY-MM-DD HH:mm:ss')}
       </Typography.Text>
     </Card>
   );

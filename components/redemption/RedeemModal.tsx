@@ -110,7 +110,7 @@ export function RedeemModal({ visible, onClose, onSuccess }: RedeemModalProps) {
       onCancel={onClose}
       footer={null}
       width={400}
-      maskClosable={false}
+      mask={{ closable: false }}
     >
       <div className="py-4">
         <Typography.Paragraph className="text-gray-500 mb-4">

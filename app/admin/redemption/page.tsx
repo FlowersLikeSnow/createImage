@@ -20,6 +20,7 @@ import {
 import { PlusOutlined, CopyOutlined, ReloadOutlined, StopOutlined, CheckOutlined, DownOutlined, SettingOutlined } from '@ant-design/icons';
 import { fetchWithAuth } from '@/lib/api/client';
 import type { RedemptionCode } from '@/types/redemption';
+import dayjs from 'dayjs';
 
 const { Text } = Typography;
 
@@ -240,7 +241,7 @@ export default function RedemptionAdminPage() {
       key: 'createdAt',
       render: (ts: number) => (
         <span className="text-[13px] text-[#888]">
-          {new Date(ts).toLocaleString('zh-CN')}
+          {dayjs(ts).format('YYYY-MM-DD HH:mm:ss')}
         </span>
       ),
     },
@@ -250,7 +251,7 @@ export default function RedemptionAdminPage() {
       key: 'expiresAt',
       render: (ts: number) => (
         <span className="text-[13px] text-[#888]">
-          {ts ? new Date(ts).toLocaleString('zh-CN') : '永久'}
+          {ts ? dayjs(ts).format('YYYY-MM-DD HH:mm:ss') : '永久'}
         </span>
       ),
     },
@@ -270,7 +271,7 @@ export default function RedemptionAdminPage() {
       key: 'usedAt',
       render: (ts: number) => (
         <span className="text-[13px] text-[#888]">
-          {ts ? new Date(ts).toLocaleString('zh-CN') : '-'}
+          {ts ? dayjs(ts).format('YYYY-MM-DD HH:mm:ss') : '-'}
         </span>
       ),
     },
