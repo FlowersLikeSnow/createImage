@@ -42,7 +42,7 @@ yarn-error.log*
 next-env.d.ts
 
 # database
-/data/*.db
+# /data/*.db
 /data/*.db-journal
 
 # public/images

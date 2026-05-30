@@ -4,6 +4,7 @@ import fs from 'fs';
 import { nanoid } from 'nanoid';
 import type { User, Session, UserRole } from '@/types/user';
 import type { RedemptionCode, RedemptionStats } from '@/types/redemption';
+import type { Message, Conversation, MessageStatus, MessageRole, GeneratedImage } from '@/types/conversation';
 import { DEFAULT_CREDITS, CREDIT_CONFIG, getCreditByLevel, getSizeLevel } from '@/lib/utils/size-config';
 
 // 数据库文件路径
@@ -59,6 +60,32 @@ db.exec(`
     FOREIGN KEY (used_by) REFERENCES users(id)
   );
 
+  CREATE TABLE IF NOT EXISTS conversations (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS messages (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    conversation_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    content TEXT,
+    reference_image TEXT,
+    generated_images TEXT,
+    image_size TEXT,
+    expanded_prompt TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    error TEXT,
+    created_at INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (conversation_id) REFERENCES conversations(id)
+  );
+
   CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
   CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
   CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -66,6 +93,9 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_redemption_codes_status ON redemption_codes(status);
   CREATE INDEX IF NOT EXISTS idx_redemption_codes_batch ON redemption_codes(batch_id);
   CREATE INDEX IF NOT EXISTS idx_redemption_codes_used_by ON redemption_codes(used_by);
+  CREATE INDEX IF NOT EXISTS idx_conversations_user ON conversations(user_id);
+  CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
+  CREATE INDEX IF NOT EXISTS idx_messages_user ON messages(user_id);
 `);
 
 // 添加 credits 列（如果不存在）
@@ -533,6 +563,270 @@ export const redemptionCodes = {
       used: row.used || 0,
       disabled: row.disabled || 0,
     };
+  },
+};
+
+// 对话操作
+export const conversations = {
+  create: (data: { title: string; userId: string }): Conversation => {
+    const id = nanoid();
+    const now = Date.now();
+    const stmt = db.prepare(`
+      INSERT INTO conversations (id, user_id, title, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+    stmt.run(id, data.userId, data.title, now, now);
+    console.log('[SQLite] Created conversation:', id, 'for user:', data.userId);
+    return {
+      id,
+      userId: data.userId,
+      title: data.title,
+      messages: [],
+      createdAt: now,
+      updatedAt: now,
+    };
+  },
+
+  get: (id: string): Conversation | null => {
+    const stmt = db.prepare('SELECT * FROM conversations WHERE id = ?');
+    const row = stmt.get(id) as any;
+    if (!row) return null;
+    return {
+      id: row.id,
+      userId: row.user_id,
+      title: row.title,
+      messages: messages.getByConversation(row.id),
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  },
+
+  getByUserId: (userId: string): Conversation[] => {
+    const stmt = db.prepare('SELECT * FROM conversations WHERE user_id = ? ORDER BY updated_at DESC');
+    const rows = stmt.all(userId) as any[];
+    return rows.map(row => ({
+      id: row.id,
+      userId: row.user_id,
+      title: row.title,
+      messages: [], // 不预加载消息，按需获取
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+  },
+
+  getAll: (): Conversation[] => {
+    const stmt = db.prepare('SELECT * FROM conversations ORDER BY updated_at DESC');
+    const rows = stmt.all() as any[];
+    return rows.map(row => ({
+      id: row.id,
+      userId: row.user_id,
+      title: row.title,
+      messages: [], // 不预加载消息
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+  },
+
+  update: (id: string, data: Partial<Conversation>): Conversation | null => {
+    const fields: string[] = [];
+    const values: any[] = [];
+
+    if (data.title !== undefined) {
+      fields.push('title = ?');
+      values.push(data.title);
+    }
+
+    if (fields.length === 0) {
+      return conversations.get(id);
+    }
+
+    fields.push('updated_at = ?');
+    values.push(Date.now());
+    values.push(id);
+
+    const stmt = db.prepare(`UPDATE conversations SET ${fields.join(', ')} WHERE id = ?`);
+    stmt.run(...values);
+    console.log('[SQLite] Updated conversation:', id);
+    return conversations.get(id);
+  },
+
+  delete: (id: string): boolean => {
+    // 先删除关联的消息
+    const deleteMsgs = db.prepare('DELETE FROM messages WHERE conversation_id = ?');
+    deleteMsgs.run(id);
+    // 再删除对话
+    const stmt = db.prepare('DELETE FROM conversations WHERE id = ?');
+    const result = stmt.run(id);
+    console.log('[SQLite] Deleted conversation:', id, 'and its messages');
+    return result.changes > 0;
+  },
+};
+
+// 消息操作
+export const messages = {
+  create: (data: {
+    userId: string;
+    conversationId: string;
+    role: MessageRole;
+    content?: string;
+    referenceImage?: string;
+    imageSize?: string;
+    status?: MessageStatus;
+  }): Message => {
+    const id = nanoid();
+    const now = Date.now();
+    const stmt = db.prepare(`
+      INSERT INTO messages (id, user_id, conversation_id, role, content, reference_image, image_size, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run(
+      id,
+      data.userId,
+      data.conversationId,
+      data.role,
+      data.content || null,
+      data.referenceImage || null,
+      data.imageSize || null,
+      data.status || 'pending',
+      now
+    );
+    // 更新对话的 updated_at
+    db.prepare('UPDATE conversations SET updated_at = ? WHERE id = ?').run(now, data.conversationId);
+    console.log('[SQLite] Created message:', id, 'for user:', data.userId, 'in conversation:', data.conversationId);
+    return {
+      id,
+      userId: data.userId,
+      conversationId: data.conversationId,
+      role: data.role,
+      content: data.content || '',
+      referenceImage: data.referenceImage,
+      imageSize: data.imageSize,
+      status: data.status || 'pending',
+      createdAt: now,
+    };
+  },
+
+  getByConversation: (conversationId: string): Message[] => {
+    const stmt = db.prepare('SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at ASC');
+    const rows = stmt.all(conversationId) as any[];
+    return rows.map(row => ({
+      id: row.id,
+      userId: row.user_id,
+      conversationId: row.conversation_id,
+      role: row.role as MessageRole,
+      content: row.content || undefined,
+      referenceImage: row.reference_image || undefined,
+      generatedImages: row.generated_images ? JSON.parse(row.generated_images) as GeneratedImage[] : undefined,
+      imageSize: row.image_size || undefined,
+      expandedPrompt: row.expanded_prompt || undefined,
+      status: row.status as MessageStatus,
+      error: row.error || undefined,
+      createdAt: row.created_at,
+    }));
+  },
+
+  update: (id: string, conversationId: string, data: Partial<Message>): Message | null => {
+    const fields: string[] = [];
+    const values: any[] = [];
+
+    if (data.content !== undefined) {
+      fields.push('content = ?');
+      values.push(data.content);
+    }
+    if (data.referenceImage !== undefined) {
+      fields.push('reference_image = ?');
+      values.push(data.referenceImage);
+    }
+    if (data.generatedImages !== undefined) {
+      fields.push('generated_images = ?');
+      values.push(JSON.stringify(data.generatedImages));
+    }
+    if (data.imageSize !== undefined) {
+      fields.push('image_size = ?');
+      values.push(data.imageSize);
+    }
+    if (data.expandedPrompt !== undefined) {
+      fields.push('expanded_prompt = ?');
+      values.push(data.expandedPrompt);
+    }
+    if (data.status !== undefined) {
+      fields.push('status = ?');
+      values.push(data.status);
+    }
+    if (data.error !== undefined) {
+      fields.push('error = ?');
+      values.push(data.error);
+    }
+
+    if (fields.length === 0) {
+      const msgs = messages.getByConversation(conversationId);
+      return msgs.find(m => m.id === id) || null;
+    }
+
+    values.push(id, conversationId);
+    const stmt = db.prepare(`UPDATE messages SET ${fields.join(', ')} WHERE id = ? AND conversation_id = ?`);
+    stmt.run(...values);
+    console.log('[SQLite] Updated message:', id, 'status:', data.status);
+
+    // 更新对话的 updated_at
+    const now = Date.now();
+    db.prepare('UPDATE conversations SET updated_at = ? WHERE id = ?').run(now, conversationId);
+
+    const msgs = messages.getByConversation(conversationId);
+    return msgs.find(m => m.id === id) || null;
+  },
+
+  delete: (id: string, conversationId: string): boolean => {
+    const stmt = db.prepare('DELETE FROM messages WHERE id = ? AND conversation_id = ?');
+    const result = stmt.run(id, conversationId);
+    console.log('[SQLite] Deleted message:', id);
+    return result.changes > 0;
+  },
+
+  getAllImagesByUser: (userId: string): Message[] => {
+    const stmt = db.prepare(`
+      SELECT * FROM messages
+      WHERE user_id = ? AND role = 'assistant' AND generated_images IS NOT NULL
+      ORDER BY created_at DESC
+    `);
+    const rows = stmt.all(userId) as any[];
+    return rows.map(row => ({
+      id: row.id,
+      userId: row.user_id,
+      conversationId: row.conversation_id,
+      role: row.role as MessageRole,
+      content: row.content || undefined,
+      referenceImage: row.reference_image || undefined,
+      generatedImages: row.generated_images ? JSON.parse(row.generated_images) as GeneratedImage[] : undefined,
+      imageSize: row.image_size || undefined,
+      expandedPrompt: row.expanded_prompt || undefined,
+      status: row.status as MessageStatus,
+      error: row.error || undefined,
+      createdAt: row.created_at,
+    }));
+  },
+
+  getAllImages: (): Message[] => {
+    const stmt = db.prepare(`
+      SELECT * FROM messages
+      WHERE role = 'assistant' AND generated_images IS NOT NULL
+      ORDER BY created_at DESC
+    `);
+    const rows = stmt.all() as any[];
+    return rows.map(row => ({
+      id: row.id,
+      userId: row.user_id,
+      conversationId: row.conversation_id,
+      role: row.role as MessageRole,
+      content: row.content || undefined,
+      referenceImage: row.reference_image || undefined,
+      generatedImages: row.generated_images ? JSON.parse(row.generated_images) as GeneratedImage[] : undefined,
+      imageSize: row.image_size || undefined,
+      expandedPrompt: row.expanded_prompt || undefined,
+      status: row.status as MessageStatus,
+      error: row.error || undefined,
+      createdAt: row.created_at,
+    }));
   },
 };
 
