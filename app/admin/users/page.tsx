@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Table, Spin, Tag } from 'antd';
-import { UserOutlined, CrownOutlined } from '@ant-design/icons';
+import { Table, Spin, Tag, Button, Modal, Form, InputNumber, Input, message, Space } from 'antd';
+import { UserOutlined, CrownOutlined, EditOutlined } from '@ant-design/icons';
 import { fetchWithAuth } from '@/lib/api/client';
 import type { User } from '@/types/user';
 
@@ -16,6 +16,9 @@ export default function UsersAdminPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editForm] = Form.useForm();
 
   useEffect(() => {
     loadUsers();
@@ -34,6 +37,34 @@ export default function UsersAdminPage() {
       console.error('Load users error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditCredits = (user: User) => {
+    setEditingUser(user);
+    setEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (values: { amount: number; remark: string }) => {
+    if (!editingUser) return;
+
+    try {
+      const response = await fetchWithAuth(`/api/admin/users/${editingUser.id}/credits`, {
+        method: 'PUT',
+        body: JSON.stringify(values),
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        message.success(`积分调整成功，新余额: ${data.data.credits.toFixed(2)}`);
+        setEditModalOpen(false);
+        editForm.resetFields();
+        loadUsers();
+      } else {
+        message.error(data.error || '调整失败');
+      }
+    } catch (error) {
+      message.error('网络错误');
     }
   };
 
@@ -165,6 +196,19 @@ export default function UsersAdminPage() {
         </span>
       ),
     },
+    {
+      title: '操作',
+      key: 'actions',
+      render: (_: any, record: User) => (
+        <Button
+          type="link"
+          icon={<EditOutlined />}
+          onClick={() => handleEditCredits(record)}
+        >
+          编辑积分
+        </Button>
+      ),
+    },
   ];
 
   return (
@@ -202,6 +246,50 @@ export default function UsersAdminPage() {
           }}
         />
       </div>
+
+      {/* 编辑积分弹窗 */}
+      <Modal
+        title={`编辑积分 - ${editingUser?.nickname}`}
+        open={editModalOpen}
+        onCancel={() => {
+          setEditModalOpen(false);
+          editForm.resetFields();
+        }}
+        onOk={() => editForm.submit()}
+        okText="确认"
+        cancelText="取消"
+      >
+        <div className="mb-[16px] text-[#666]">
+          当前余额：<span className="text-[#531dab] font-mono font-semibold">{editingUser?.credits.toFixed(2)}</span>
+        </div>
+        <Form
+          form={editForm}
+          onFinish={handleEditSubmit}
+          layout="vertical"
+        >
+          <Form.Item
+            name="amount"
+            label="调整金额"
+            rules={[{ required: true, message: '请输入调整金额' }]}
+            extra="正数为增加积分，负数为扣除积分"
+          >
+            <InputNumber
+              style={{ width: '100%' }}
+              precision={2}
+              placeholder="输入金额（如 0.5 或 -0.5）"
+            />
+          </Form.Item>
+          <Form.Item
+            name="remark"
+            label="备注"
+          >
+            <Input.TextArea
+              rows={2}
+              placeholder="请输入调整原因（可选）"
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

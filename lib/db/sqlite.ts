@@ -5,6 +5,7 @@ import { nanoid } from 'nanoid';
 import type { User, Session, UserRole } from '@/types/user';
 import type { RedemptionCode, RedemptionStats } from '@/types/redemption';
 import type { Message, Conversation, MessageStatus, MessageRole, GeneratedImage } from '@/types/conversation';
+import type { CreditRecord, CreditRecordType, CreditRecordStats } from '@/types/credit-record';
 import { DEFAULT_CREDITS, CREDIT_CONFIG, getCreditByLevel, getSizeLevel } from '@/lib/utils/size-config';
 
 // 数据库文件路径
@@ -86,6 +87,18 @@ db.exec(`
     FOREIGN KEY (conversation_id) REFERENCES conversations(id)
   );
 
+  CREATE TABLE IF NOT EXISTS credit_records (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    type TEXT NOT NULL,
+    amount REAL NOT NULL,
+    balance_after REAL NOT NULL,
+    description TEXT,
+    related_id TEXT,
+    created_at INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
   CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
   CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
   CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -96,6 +109,9 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_conversations_user ON conversations(user_id);
   CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
   CREATE INDEX IF NOT EXISTS idx_messages_user ON messages(user_id);
+  CREATE INDEX IF NOT EXISTS idx_credit_records_user ON credit_records(user_id);
+  CREATE INDEX IF NOT EXISTS idx_credit_records_type ON credit_records(type);
+  CREATE INDEX IF NOT EXISTS idx_credit_records_created ON credit_records(created_at);
 `);
 
 // 添加 credits 列（如果不存在）
@@ -142,6 +158,14 @@ export const users = {
       VALUES (?, ?, ?, ?, ?, 0, ?, 'user', ?)
     `);
     stmt.run(id, data.email, data.passwordHash, data.nickname, DEFAULT_CREDITS, DEFAULT_CREDITS, now);
+
+    // 创建注册积分记录
+    const recordStmt = db.prepare(`
+      INSERT INTO credit_records (id, user_id, type, amount, balance_after, description, created_at)
+      VALUES (?, ?, 'register', ?, ?, ?, ?)
+    `);
+    recordStmt.run(nanoid(), id, DEFAULT_CREDITS, DEFAULT_CREDITS, '注册赠送初始积分', now);
+
     console.log('[SQLite] Created user:', id, data.email, 'with credits:', DEFAULT_CREDITS);
     return {
       id,
@@ -247,7 +271,7 @@ export const users = {
   },
 
   // 扣除积分（根据图片尺寸和数量）
-  deductCredits: (id: string, imageSize: string, count: number = 1): { success: boolean; credits?: number; error?: string } => {
+  deductCredits: (id: string, imageSize: string, count: number = 1): { success: boolean; credits?: number; amount?: number; error?: string } => {
     const user = users.getById(id);
     if (!user) {
       return { success: false, error: '用户不存在' };
@@ -263,12 +287,72 @@ export const users = {
     const newCredits = user.credits - deductAmount;
     const newConsumedCredits = user.consumedCredits + deductAmount;
     users.update(id, { credits: newCredits, consumedCredits: newConsumedCredits });
+
+    // 创建积分扣除记录
+    const now = Date.now();
+    const recordStmt = db.prepare(`
+      INSERT INTO credit_records (id, user_id, type, amount, balance_after, description, created_at)
+      VALUES (?, ?, 'generate', ?, ?, ?, ?)
+    `);
+    recordStmt.run(nanoid(), id, -deductAmount, newCredits, `生成图片 ${level}尺寸 ×${count}`, now);
+
     console.log('[SQLite] Deducted credits:', deductAmount, 'for user:', id, 'new credits:', newCredits, 'total consumed:', newConsumedCredits);
+    return { success: true, credits: newCredits, amount: deductAmount };
+  },
+
+  // 退还积分（用于图片生成失败）
+  refundCredits: (id: string, amount: number, reason: string = '生成失败退还'): { success: boolean; credits?: number; error?: string } => {
+    const user = users.getById(id);
+    if (!user) {
+      return { success: false, error: '用户不存在' };
+    }
+
+    const newCredits = user.credits + amount;
+    const newConsumedCredits = user.consumedCredits - amount;
+    users.update(id, { credits: newCredits, consumedCredits: Math.max(0, newConsumedCredits) });
+
+    // 创建积分退还记录
+    const now = Date.now();
+    const recordStmt = db.prepare(`
+      INSERT INTO credit_records (id, user_id, type, amount, balance_after, description, created_at)
+      VALUES (?, ?, 'refund', ?, ?, ?, ?)
+    `);
+    recordStmt.run(nanoid(), id, amount, newCredits, reason, now);
+
+    console.log('[SQLite] Refunded credits:', amount, 'for user:', id, 'new credits:', newCredits);
     return { success: true, credits: newCredits };
   },
 
   // 获取积分扣除规则
   getCreditRules: () => CREDIT_CONFIG,
+
+  // 管理员调整用户积分
+  adjustCredits: (id: string, amount: number, remark: string, operatorId: string): { success: boolean; credits?: number; error?: string } => {
+    const user = users.getById(id);
+    if (!user) {
+      return { success: false, error: '用户不存在' };
+    }
+
+    const newCredits = user.credits + amount;
+    if (newCredits < 0) {
+      return { success: false, error: '调整后积分不能为负数' };
+    }
+
+    const newTotalCredits = amount > 0 ? user.totalCredits + amount : user.totalCredits;
+    users.update(id, { credits: newCredits, totalCredits: newTotalCredits });
+
+    // 创建积分调整记录
+    const now = Date.now();
+    const type: CreditRecordType = amount > 0 ? 'admin_add' : 'admin_deduct';
+    const recordStmt = db.prepare(`
+      INSERT INTO credit_records (id, user_id, type, amount, balance_after, description, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    recordStmt.run(nanoid(), id, amount, newCredits, remark || `管理员调整积分`, now);
+
+    console.log('[SQLite] Admin adjusted credits:', amount, 'for user:', id, 'by operator:', operatorId, 'new credits:', newCredits);
+    return { success: true, credits: newCredits };
+  },
 
   // 获取所有用户列表
   getAll: (): User[] => {
@@ -458,17 +542,26 @@ export const redemptionCodes = {
         SET status = 'used', used_by = ?, used_at = ?
         WHERE id = ?
       `);
-      updateStmt.run(userId, Date.now(), codeRow.id);
+      const now = Date.now();
+      updateStmt.run(userId, now, codeRow.id);
 
       // 增加用户积分和总积分
       const user = users.getById(userId);
       if (!user) {
         return { success: false, error: '用户不存在' };
       }
+      const newCredits = user.credits + codeRow.credits;
       users.update(userId, {
-        credits: user.credits + codeRow.credits,
+        credits: newCredits,
         totalCredits: user.totalCredits + codeRow.credits
       });
+
+      // 创建积分兑换记录
+      const recordStmt = db.prepare(`
+        INSERT INTO credit_records (id, user_id, type, amount, balance_after, description, related_id, created_at)
+        VALUES (?, ?, 'redeem', ?, ?, ?, ?, ?)
+      `);
+      recordStmt.run(nanoid(), userId, codeRow.credits, newCredits, `兑换码 ${code}`, codeRow.id, now);
 
       console.log('[SQLite] Used redemption code:', code, 'by user:', userId, 'credits:', codeRow.credits);
       return { success: true, credits: codeRow.credits };
@@ -827,6 +920,168 @@ export const messages = {
       error: row.error || undefined,
       createdAt: row.created_at,
     }));
+  },
+};
+
+// 积分消费记录操作
+export const creditRecords = {
+  // 创建记录
+  create: (data: {
+    userId: string;
+    type: CreditRecordType;
+    amount: number;
+    balanceAfter: number;
+    description?: string;
+    relatedId?: string;
+  }): CreditRecord => {
+    const id = nanoid();
+    const now = Date.now();
+    const stmt = db.prepare(`
+      INSERT INTO credit_records (id, user_id, type, amount, balance_after, description, related_id, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run(
+      id,
+      data.userId,
+      data.type,
+      data.amount,
+      data.balanceAfter,
+      data.description || null,
+      data.relatedId || null,
+      now
+    );
+    console.log('[SQLite] Created credit record:', id, 'type:', data.type, 'amount:', data.amount, 'for user:', data.userId);
+    return {
+      id,
+      userId: data.userId,
+      type: data.type,
+      amount: data.amount,
+      balanceAfter: data.balanceAfter,
+      description: data.description,
+      relatedId: data.relatedId,
+      createdAt: now,
+    };
+  },
+
+  // 查询用户记录（支持分页）
+  getByUserId: (userId: string, limit?: number, offset?: number): CreditRecord[] => {
+    let sql = 'SELECT * FROM credit_records WHERE user_id = ? ORDER BY created_at DESC';
+    if (limit) {
+      sql += ` LIMIT ${limit}`;
+      if (offset) {
+        sql += ` OFFSET ${offset}`;
+      }
+    }
+    const stmt = db.prepare(sql);
+    const rows = stmt.all(userId) as any[];
+    return rows.map(row => ({
+      id: row.id,
+      userId: row.user_id,
+      type: row.type as CreditRecordType,
+      amount: row.amount,
+      balanceAfter: row.balance_after,
+      description: row.description || undefined,
+      relatedId: row.related_id || undefined,
+      createdAt: row.created_at,
+    }));
+  },
+
+  // 查询所有记录（支持分页和筛选）
+  getAll: (options?: {
+    limit?: number;
+    offset?: number;
+    userId?: string;
+    type?: CreditRecordType;
+  }): CreditRecord[] => {
+    let sql = 'SELECT * FROM credit_records';
+    const conditions: string[] = [];
+    const values: any[] = [];
+
+    if (options?.userId) {
+      conditions.push('user_id = ?');
+      values.push(options.userId);
+    }
+    if (options?.type) {
+      conditions.push('type = ?');
+      values.push(options.type);
+    }
+
+    if (conditions.length > 0) {
+      sql += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    sql += ' ORDER BY created_at DESC';
+
+    if (options?.limit) {
+      sql += ` LIMIT ${options.limit}`;
+      if (options?.offset) {
+        sql += ` OFFSET ${options.offset}`;
+      }
+    }
+
+    const stmt = db.prepare(sql);
+    const rows = stmt.all(...values) as any[];
+    return rows.map(row => ({
+      id: row.id,
+      userId: row.user_id,
+      type: row.type as CreditRecordType,
+      amount: row.amount,
+      balanceAfter: row.balance_after,
+      description: row.description || undefined,
+      relatedId: row.related_id || undefined,
+      createdAt: row.created_at,
+    }));
+  },
+
+  // 统计信息
+  getStats: (userId?: string): CreditRecordStats => {
+    let sql = `
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN type = 'generate' THEN ABS(amount) ELSE 0 END) as totalGenerate,
+        SUM(CASE WHEN type = 'refund' THEN ABS(amount) ELSE 0 END) as totalRefund,
+        SUM(CASE WHEN type = 'redeem' THEN ABS(amount) ELSE 0 END) as totalRedeem,
+        SUM(CASE WHEN type = 'admin_add' THEN ABS(amount) ELSE 0 END) as totalAdminAdd,
+        SUM(CASE WHEN type = 'admin_deduct' THEN ABS(amount) ELSE 0 END) as totalAdminDeduct
+      FROM credit_records
+    `;
+    if (userId) {
+      sql += ' WHERE user_id = ?';
+    }
+    const stmt = db.prepare(sql);
+    const row = userId ? stmt.get(userId) as any : stmt.get() as any;
+    return {
+      total: row.total || 0,
+      totalGenerate: row.totalGenerate || 0,
+      totalRefund: row.totalRefund || 0,
+      totalRedeem: row.totalRedeem || 0,
+      totalAdminAdd: row.totalAdminAdd || 0,
+      totalAdminDeduct: row.totalAdminDeduct || 0,
+    };
+  },
+
+  // 获取记录总数
+  getCount: (userId?: string, type?: CreditRecordType): number => {
+    let sql = 'SELECT COUNT(*) as count FROM credit_records';
+    const conditions: string[] = [];
+    const values: any[] = [];
+
+    if (userId) {
+      conditions.push('user_id = ?');
+      values.push(userId);
+    }
+    if (type) {
+      conditions.push('type = ?');
+      values.push(type);
+    }
+
+    if (conditions.length > 0) {
+      sql += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    const stmt = db.prepare(sql);
+    const row = stmt.get(...values) as any;
+    return row.count || 0;
   },
 };
 

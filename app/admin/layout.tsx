@@ -11,6 +11,7 @@ import {
   GiftOutlined,
   UserOutlined,
   TeamOutlined,
+  TransactionOutlined,
 } from '@ant-design/icons';
 
 const { Sider, Content, Header } = Layout;
@@ -82,6 +83,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </Link>
       ),
     },
+    {
+      key: '/admin/credit-records',
+      icon: <TransactionOutlined style={{ color: pathname === '/admin/credit-records' ? '#531dab' : '#666' }} />,
+      label: (
+        <Link
+          href="/admin/credit-records"
+          className={pathname === '/admin/credit-records' ? 'text-[#531dab] font-medium' : 'text-[#333] hover:text-[#531dab]'}
+        >
+          消费记录
+        </Link>
+      ),
+    },
   ];
 
   return (
@@ -138,7 +151,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         {/* 顶部标题栏 - 固定 */}
         <Header className="bg-white border-b border-[#e8e8e8] px-[24px] h-[64px] flex items-center justify-between sticky top-0 z-10">
           <h1 className="text-[16px] font-semibold text-[#fff] tracking-tight">
-            {pathname === '/admin' ? '概览' : pathname === '/admin/users' ? '用户列表' : pathname === '/admin/redemption' ? '兑换码管理' : '管理后台'}
+            {pathname === '/admin' ? '概览' : pathname === '/admin/users' ? '用户列表' : pathname === '/admin/redemption' ? '兑换码管理' : pathname === '/admin/credit-records' ? '消费记录' : '管理后台'}
           </h1>
           <Link
             href="/"

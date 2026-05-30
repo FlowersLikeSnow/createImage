@@ -4,6 +4,7 @@ import { sessions, users } from '@/lib/db/sqlite';
 export interface AuthResult {
   success: boolean;
   userId?: string;
+  user?: { id: string; role: string };
   error?: string;
 }
 
@@ -32,7 +33,11 @@ export async function verifyAuth(request: NextRequest): Promise<AuthResult> {
     return { success: false, error: '用户不存在' };
   }
 
-  return { success: true, userId: user.id };
+  return { success: true, userId: user.id, user: { id: user.id, role: user.role } };
+}
+
+export function requireAdmin(authResult: AuthResult): boolean {
+  return authResult.success && authResult.user?.role === 'admin';
 }
 
 export function withAuthResponse(error: string): NextResponse {
