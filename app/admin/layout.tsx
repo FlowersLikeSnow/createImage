@@ -44,7 +44,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     return <NotFound />;
   }
 
-  // 菜单项 - 使用更亮的文字颜色
+  // 菜单项
   const menuItems = [
     {
       key: '/admin',
@@ -86,10 +86,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <Layout className="h-screen bg-[#f5f5f5]">
-      {/* 侧边栏 */}
+      {/* 侧边栏 - 固定定位，不滚动 */}
       <Sider
         width={220}
-        className="bg-white border-r border-[#e8e8e8]"
+        className="fixed left-0 top-0 h-screen bg-white border-r border-[#e8e8e8] overflow-hidden z-10"
         theme="light"
       >
         {/* Logo 区域 */}
@@ -104,19 +104,21 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
         </div>
 
-        {/* 导航菜单 */}
-        <Menu
-          mode="inline"
-          selectedKeys={[pathname]}
-          items={menuItems}
-          className="border-none mt-[12px]"
-          style={{
-            background: 'transparent',
-          }}
-        />
+        {/* 导航菜单 - 可滚动区域 */}
+        <div className="h-[calc(100vh-64px-80px)] overflow-y-auto">
+          <Menu
+            mode="inline"
+            selectedKeys={[pathname]}
+            items={menuItems}
+            className="border-none mt-[12px]"
+            style={{
+              background: 'transparent',
+            }}
+          />
+        </div>
 
-        {/* 底部用户信息 */}
-        <div className="absolute bottom-0 left-0 right-0 p-[16px] border-t border-[#e8e8e8] bg-white">
+        {/* 底部用户信息 - 固定 */}
+        <div className="absolute bottom-0 left-0 right-0 h-[80px] p-[16px] border-t border-[#e8e8e8] bg-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-[12px]">
               <div className="w-[36px] h-[36px] rounded-[8px] bg-[#faad14] flex items-center justify-center">
@@ -139,17 +141,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
       </Sider>
 
-      {/* 主内容区 */}
-      <Layout className="bg-[#f5f5f5] flex flex-col">
-        {/* 顶部标题栏 */}
-        <Header className="bg-white border-b border-[#e8e8e8] px-[24px] h-[64px] flex items-center">
+      {/* 主内容区 - 独立滚动 */}
+      <Layout className=" bg-[#f5f5f5] flex flex-col h-screen">
+        {/* 顶部标题栏 - 固定 */}
+        <Header className="bg-white border-b border-[#e8e8e8] px-[24px] h-[64px] flex items-center sticky top-0 z-10">
           <h1 className="text-[16px] font-semibold text-[#fff] tracking-tight">
             {pathname === '/admin' ? '概览' : pathname === '/admin/users' ? '用户列表' : pathname === '/admin/redemption' ? '兑换码管理' : '管理后台'}
           </h1>
         </Header>
 
-        {/* 内容区域 */}
-        <Content className="p-[24px] bg-[#f5f5f5] flex-auto ">
+        {/* 内容区域 - 可滚动 */}
+        <Content className="p-[24px] bg-[#f5f5f5] overflow-y-auto flex-1">
           {children}
         </Content>
       </Layout>
