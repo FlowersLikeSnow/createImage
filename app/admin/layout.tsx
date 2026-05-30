@@ -96,7 +96,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <div className="h-[64px] flex items-center px-[20px] border-b border-[#e8e8e8]">
           <div className="flex items-center gap-[12px]">
             <div className="w-[32px] h-[32px] rounded-[8px] bg-[#531dab] flex items-center justify-center">
-              <GiftOutlined className="text-white text-[16px]" />
+              <GiftOutlined className="text-white text-[16px]" style={{color:'#fff'}} />
             </div>
             <span className="text-[15px] font-semibold text-[#333] tracking-tight">
               管理后台
@@ -118,25 +118,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
 
         {/* 底部用户信息 - 固定 */}
-        <div className="absolute bottom-0 left-0 right-0 h-[80px] p-[16px] border-t border-[#e8e8e8] bg-white">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-[12px]">
-              <div className="w-[36px] h-[36px] rounded-[8px] bg-[#faad14] flex items-center justify-center">
-                <UserOutlined className="text-white text-[14px]" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[13px] text-[#333] font-medium">
-                  {user.nickname}
-                </span>
-                <span className="text-[11px] text-[#888]">管理员</span>
-              </div>
+        <div className="absolute bottom-0 left-0 right-0 p-[16px] border-t border-[#e8e8e8] bg-white">
+          <div className="flex items-center justify-center gap-[12px]">
+            <div className="w-[36px] h-[36px] rounded-[8px] bg-[#faad14] flex items-center justify-center">
+              <UserOutlined className="text-white text-[14px]" />
             </div>
-            <Link
-              href="/"
-              className="text-[12px] text-[#531dab] hover:text-[#7c3aed] transition-colors font-medium"
-            >
-              返回前台
-            </Link>
+            <div className="flex flex-col">
+              <span className="text-[13px] text-[#333] font-medium">
+                {user.nickname}
+              </span>
+              <span className="text-[11px] text-[#888]">管理员</span>
+            </div>
           </div>
         </div>
       </Sider>
@@ -144,10 +136,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* 主内容区 - 独立滚动 */}
       <Layout className=" bg-[#f5f5f5] flex flex-col h-screen">
         {/* 顶部标题栏 - 固定 */}
-        <Header className="bg-white border-b border-[#e8e8e8] px-[24px] h-[64px] flex items-center sticky top-0 z-10">
+        <Header className="bg-white border-b border-[#e8e8e8] px-[24px] h-[64px] flex items-center justify-between sticky top-0 z-10">
           <h1 className="text-[16px] font-semibold text-[#fff] tracking-tight">
             {pathname === '/admin' ? '概览' : pathname === '/admin/users' ? '用户列表' : pathname === '/admin/redemption' ? '兑换码管理' : '管理后台'}
           </h1>
+          <Link
+            href="/"
+            className="text-[14px] text-[#531dab] hover:text-[#7c3aed] transition-colors font-medium"
+          >
+            返回前台
+          </Link>
         </Header>
 
         {/* 内容区域 - 可滚动 */}

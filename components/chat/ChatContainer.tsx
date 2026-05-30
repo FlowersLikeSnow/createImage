@@ -290,6 +290,9 @@ export function ChatContainer() {
             </div>
           ) : images.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-400">
+              <div className='p-[13px] rounded-[50%] bg-[#F6F7F9]  flex items-center justify-center mb-[10px]'>
+                <Sparkles size={30} color='#C9CBCD' />
+              </div>
               <Typography.Text className="text-lg">输入提示词开始生成图片</Typography.Text>
               <Typography.Text className="text-sm mt-2">支持扩写提示词、选择尺寸比例</Typography.Text>
             </div>
