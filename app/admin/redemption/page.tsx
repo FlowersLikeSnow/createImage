@@ -277,7 +277,7 @@ export default function RedemptionAdminPage() {
   ];
 
   return (
-    <div className="max-w-[1200px]">
+    <div className="w-full flex-auto flex flex-col">
       {/* 操作栏 */}
       <div className="flex items-center justify-between mb-[20px]">
         <div className="flex items-center gap-[12px]">
@@ -341,7 +341,7 @@ export default function RedemptionAdminPage() {
       )}
 
       {/* 表格 */}
-      <Card className="rounded-[12px] overflow-hidden">
+      <Card className="rounded-[12px] overflow-hidden flex-auto">
         <Table
           dataSource={codes}
           columns={columns}

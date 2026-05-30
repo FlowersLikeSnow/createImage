@@ -85,7 +85,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   ];
 
   return (
-    <Layout className="min-h-screen bg-[#f5f5f5]">
+    <Layout className="h-screen bg-[#f5f5f5]">
       {/* 侧边栏 */}
       <Sider
         width={220}
@@ -140,16 +140,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </Sider>
 
       {/* 主内容区 */}
-      <Layout className="bg-[#f5f5f5]">
+      <Layout className="bg-[#f5f5f5] flex flex-col">
         {/* 顶部标题栏 */}
         <Header className="bg-white border-b border-[#e8e8e8] px-[24px] h-[64px] flex items-center">
-          <h1 className="text-[16px] font-semibold text-[#333] tracking-tight">
+          <h1 className="text-[16px] font-semibold text-[#fff] tracking-tight">
             {pathname === '/admin' ? '概览' : pathname === '/admin/users' ? '用户列表' : pathname === '/admin/redemption' ? '兑换码管理' : '管理后台'}
           </h1>
         </Header>
 
         {/* 内容区域 */}
-        <Content className="p-[24px] bg-[#f5f5f5]">
+        <Content className="p-[24px] bg-[#f5f5f5] flex-auto ">
           {children}
         </Content>
       </Layout>
