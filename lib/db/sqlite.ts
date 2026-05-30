@@ -28,6 +28,8 @@ db.exec(`
     nickname TEXT NOT NULL,
     avatar TEXT,
     credits REAL DEFAULT 0.1,
+    consumed_credits REAL DEFAULT 0,
+    total_credits REAL DEFAULT 0.1,
     role TEXT DEFAULT 'user',
     created_at INTEGER NOT NULL,
     last_login_at INTEGER,
@@ -80,6 +82,20 @@ try {
   // 列已存在，忽略错误
 }
 
+// 添加 consumed_credits 列（如果不存在）- 消耗积分累计
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN consumed_credits REAL DEFAULT 0`);
+} catch (e) {
+  // 列已存在，忽略错误
+}
+
+// 添加 total_credits 列（如果不存在）- 总积分累计（包含消耗的）
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN total_credits REAL DEFAULT 0.1`);
+} catch (e) {
+  // 列已存在，忽略错误
+}
+
 console.log('[SQLite] Database initialized at:', DB_PATH);
 
 // 用户操作
@@ -92,10 +108,10 @@ export const users = {
     const id = nanoid();
     const now = Date.now();
     const stmt = db.prepare(`
-      INSERT INTO users (id, email, password_hash, nickname, credits, role, created_at)
-      VALUES (?, ?, ?, ?, ?, 'user', ?)
+      INSERT INTO users (id, email, password_hash, nickname, credits, consumed_credits, total_credits, role, created_at)
+      VALUES (?, ?, ?, ?, ?, 0, ?, 'user', ?)
     `);
-    stmt.run(id, data.email, data.passwordHash, data.nickname, DEFAULT_CREDITS, now);
+    stmt.run(id, data.email, data.passwordHash, data.nickname, DEFAULT_CREDITS, DEFAULT_CREDITS, now);
     console.log('[SQLite] Created user:', id, data.email, 'with credits:', DEFAULT_CREDITS);
     return {
       id,
@@ -103,6 +119,8 @@ export const users = {
       passwordHash: data.passwordHash,
       nickname: data.nickname,
       credits: DEFAULT_CREDITS,
+      consumedCredits: 0,
+      totalCredits: DEFAULT_CREDITS,
       role: 'user' as UserRole,
       createdAt: now,
     };
@@ -119,6 +137,8 @@ export const users = {
       nickname: row.nickname,
       avatar: row.avatar,
       credits: row.credits ?? DEFAULT_CREDITS,
+      consumedCredits: row.consumed_credits ?? 0,
+      totalCredits: row.total_credits ?? DEFAULT_CREDITS,
       role: (row.role || 'user') as UserRole,
       createdAt: row.created_at,
       lastLoginAt: row.last_login_at,
@@ -137,6 +157,8 @@ export const users = {
       nickname: row.nickname,
       avatar: row.avatar,
       credits: row.credits ?? DEFAULT_CREDITS,
+      consumedCredits: row.consumed_credits ?? 0,
+      totalCredits: row.total_credits ?? DEFAULT_CREDITS,
       role: (row.role || 'user') as UserRole,
       createdAt: row.created_at,
       lastLoginAt: row.last_login_at,
@@ -163,6 +185,14 @@ export const users = {
     if (data.credits !== undefined) {
       fields.push('credits = ?');
       values.push(data.credits);
+    }
+    if (data.consumedCredits !== undefined) {
+      fields.push('consumed_credits = ?');
+      values.push(data.consumedCredits);
+    }
+    if (data.totalCredits !== undefined) {
+      fields.push('total_credits = ?');
+      values.push(data.totalCredits);
     }
     if (data.role !== undefined) {
       fields.push('role = ?');
@@ -201,13 +231,51 @@ export const users = {
     }
 
     const newCredits = user.credits - deductAmount;
-    users.update(id, { credits: newCredits });
-    console.log('[SQLite] Deducted credits:', deductAmount, 'for user:', id, 'new credits:', newCredits);
+    const newConsumedCredits = user.consumedCredits + deductAmount;
+    users.update(id, { credits: newCredits, consumedCredits: newConsumedCredits });
+    console.log('[SQLite] Deducted credits:', deductAmount, 'for user:', id, 'new credits:', newCredits, 'total consumed:', newConsumedCredits);
     return { success: true, credits: newCredits };
   },
 
   // 获取积分扣除规则
   getCreditRules: () => CREDIT_CONFIG,
+
+  // 获取所有用户列表
+  getAll: (): User[] => {
+    const stmt = db.prepare('SELECT * FROM users ORDER BY created_at DESC');
+    const rows = stmt.all() as any[];
+    return rows.map(row => ({
+      id: row.id,
+      email: row.email,
+      passwordHash: row.password_hash,
+      nickname: row.nickname,
+      avatar: row.avatar,
+      credits: row.credits ?? DEFAULT_CREDITS,
+      consumedCredits: row.consumed_credits ?? 0,
+      totalCredits: row.total_credits ?? DEFAULT_CREDITS,
+      role: (row.role || 'user') as UserRole,
+      createdAt: row.created_at,
+      lastLoginAt: row.last_login_at,
+      lastLoginIp: row.last_login_ip,
+    }));
+  },
+
+  // 获取用户统计
+  getStats: (): { total: number; totalCredits: number; totalConsumed: number } => {
+    const stmt = db.prepare(`
+      SELECT
+        COUNT(*) as total,
+        SUM(credits) as totalCredits,
+        SUM(consumed_credits) as totalConsumed
+      FROM users
+    `);
+    const row = stmt.get() as any;
+    return {
+      total: row.total || 0,
+      totalCredits: row.totalCredits || 0,
+      totalConsumed: row.totalConsumed || 0,
+    };
+  },
 };
 
 // 会话操作
@@ -362,12 +430,15 @@ export const redemptionCodes = {
       `);
       updateStmt.run(userId, Date.now(), codeRow.id);
 
-      // 增加用户积分
+      // 增加用户积分和总积分
       const user = users.getById(userId);
       if (!user) {
         return { success: false, error: '用户不存在' };
       }
-      users.update(userId, { credits: user.credits + codeRow.credits });
+      users.update(userId, {
+        credits: user.credits + codeRow.credits,
+        totalCredits: user.totalCredits + codeRow.credits
+      });
 
       console.log('[SQLite] Used redemption code:', code, 'by user:', userId, 'credits:', codeRow.credits);
       return { success: true, credits: codeRow.credits };

@@ -6,8 +6,10 @@ export interface User {
   passwordHash: string;
   nickname: string;
   avatar?: string;
-  credits: number;          // 用户积分
-  role: UserRole;           // 用户角色
+  credits: number;           // 当前剩余积分
+  consumedCredits: number;   // 累计消耗积分
+  totalCredits: number;      // 累计获得积分（包含消耗的）
+  role: UserRole;            // 用户角色
   createdAt: number;
   lastLoginAt?: number;
   lastLoginIp?: string;
