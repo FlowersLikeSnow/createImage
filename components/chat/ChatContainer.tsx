@@ -376,7 +376,7 @@ export function ChatContainer() {
                     
                   <Tooltip placement='topRight' title={
                       numImages === 1
-                        ? `单次生成 (预估 ${getCreditBySize(imageSize).toFixed(1)} 积分)`
+                        ? `单次生成 (预估 ${getCreditBySize(imageSize).toFixed(2)} 积分)`
                         : `并发生成 ${numImages} 张 (预估 ${(getCreditBySize(imageSize) * numImages).toFixed(1)} 积分)`
                     }>
                     <SendButton disabled={inputValue.trim() === '' || expandLoading || loading} />

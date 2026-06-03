@@ -48,6 +48,9 @@ export function RedeemModal({ visible, onClose, onSuccess }: RedeemModalProps) {
 
   // 格式化兑换码输入（自动补全格式）
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCode(e.target.value?.trim() ?? '');
+  }
+  const handleCodeBlur = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     // 转大写，移除非字母数字字符
     const cleaned = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -121,6 +124,7 @@ export function RedeemModal({ visible, onClose, onSuccess }: RedeemModalProps) {
           placeholder="GIFT-XXXX-XXXXX-XXXX"
           value={code}
           onChange={handleCodeChange}
+          onBlur={handleCodeBlur}
           size="large"
           className="text-center font-mono"
           maxLength={20}
