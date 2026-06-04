@@ -213,7 +213,7 @@ export default function UsersAdminPage() {
   ];
 
   return (
-    <div className="max-w-[1200px]">
+    <div className="w-full">
       {/* 统计卡片 */}
       <div className="grid grid-cols-3 gap-[16px] mb-[24px]">
         {statCards.map((stat) => (
