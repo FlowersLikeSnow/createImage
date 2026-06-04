@@ -111,7 +111,18 @@ export function RedeemModal({ visible, onClose, onSuccess }: RedeemModalProps) {
       }
       open={visible}
       onCancel={onClose}
-      footer={null}
+      footer={[
+        <Button onClick={onClose}>取消</Button>,
+          <Button
+            type="primary"
+            loading={loading}
+            onClick={handleRedeem}
+            disabled={!code || !isCodeComplete}
+            icon={<GiftOutlined />}
+          >
+            兑换
+          </Button>
+      ]}
       width={400}
       mask={{ closable: false }}
     >
@@ -137,19 +148,6 @@ export function RedeemModal({ visible, onClose, onSuccess }: RedeemModalProps) {
             兑换码格式不完整
           </Typography.Text>
         )}
-
-        <div className="mt-4 flex justify-end gap-2">
-          <Button onClick={onClose}>取消</Button>
-          <Button
-            type="primary"
-            loading={loading}
-            onClick={handleRedeem}
-            disabled={!code || !isCodeComplete}
-            icon={<GiftOutlined />}
-          >
-            兑换
-          </Button>
-        </div>
       </div>
     </Modal>
   );

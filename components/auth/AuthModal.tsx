@@ -95,7 +95,7 @@ export function AuthModal() {
       key: 'login',
       label: '登录',
       children: (
-        <Form layout="vertical" className="mt-4">
+        <Form layout="vertical" className="mt-4" onFinish={handleLogin}>
           <Form.Item label="邮箱" required>
             <Input
               placeholder="请输入邮箱"
@@ -119,7 +119,7 @@ export function AuthModal() {
             />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" block loading={loading} onClick={handleLogin}>
+            <Button type="primary" block loading={loading} htmlType="submit">
               登录
             </Button>
           </Form.Item>
@@ -130,7 +130,7 @@ export function AuthModal() {
       key: 'register',
       label: '注册',
       children: (
-        <Form layout="vertical" className="mt-4">
+        <Form layout="vertical" className="mt-4" onFinish={handleRegister}>
           <Form.Item label="邮箱" required>
             <Input
               placeholder="请输入邮箱"
@@ -161,7 +161,7 @@ export function AuthModal() {
             />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" block loading={loading} onClick={handleRegister}>
+            <Button type="primary" block loading={loading} htmlType="submit">
               注册
             </Button>
           </Form.Item>
