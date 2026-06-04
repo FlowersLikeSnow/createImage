@@ -46,69 +46,28 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     return <NotFound />;
   }
 
-  // 菜单项
-  const menuItems = [
-    {
-      key: '/admin',
-      icon: <HomeOutlined style={{ color: pathname === '/admin' ? '#531dab' : '#666' }} />,
-      label: (
-        <Link
-          href="/admin"
-          className={pathname === '/admin' ? 'text-[#531dab] font-medium' : 'text-[#333] hover:text-[#531dab]'}
-        >
-          概览
-        </Link>
-      ),
-    },
-    {
-      key: '/admin/users',
-      icon: <TeamOutlined style={{ color: pathname === '/admin/users' ? '#531dab' : '#666' }} />,
-      label: (
-        <Link
-          href="/admin/users"
-          className={pathname === '/admin/users' ? 'text-[#531dab] font-medium' : 'text-[#333] hover:text-[#531dab]'}
-        >
-          用户列表
-        </Link>
-      ),
-    },
-    {
-      key: '/admin/redemption',
-      icon: <GiftOutlined style={{ color: pathname === '/admin/redemption' ? '#531dab' : '#666' }} />,
-      label: (
-        <Link
-          href="/admin/redemption"
-          className={pathname === '/admin/redemption' ? 'text-[#531dab] font-medium' : 'text-[#333] hover:text-[#531dab]'}
-        >
-          兑换码
-        </Link>
-      ),
-    },
-    {
-      key: '/admin/credit-records',
-      icon: <TransactionOutlined style={{ color: pathname === '/admin/credit-records' ? '#531dab' : '#666' }} />,
-      label: (
-        <Link
-          href="/admin/credit-records"
-          className={pathname === '/admin/credit-records' ? 'text-[#531dab] font-medium' : 'text-[#333] hover:text-[#531dab]'}
-        >
-          消费记录
-        </Link>
-      ),
-    },
-    {
-      key: '/admin/messages',
-      icon: <MessageOutlined style={{ color: pathname === '/admin/messages' ? '#531dab' : '#666' }} />,
-      label: (
-        <Link
-          href="/admin/messages"
-          className={pathname === '/admin/messages' ? 'text-[#531dab] font-medium' : 'text-[#333] hover:text-[#531dab]'}
-        >
-          消息管理
-        </Link>
-      ),
-    },
+  // 菜单项配置
+  const menuConfig = [
+    { key: '/admin', label: '概览', icon: HomeOutlined },
+    { key: '/admin/users', label: '用户列表', icon: TeamOutlined },
+    { key: '/admin/redemption', label: '兑换码', icon: GiftOutlined },
+    { key: '/admin/credit-records', label: '消费记录', icon: TransactionOutlined },
+    { key: '/admin/messages', label: '消息管理', icon: MessageOutlined },
   ];
+
+  // 统一生成菜单项
+  const menuItems = menuConfig.map(item => ({
+    key: item.key,
+    icon: <item.icon style={{ color: pathname === item.key ? '#531dab' : '#666' }} />,
+    label: (
+      <Link
+        href={item.key}
+        className={pathname === item.key ? 'text-[#531dab] font-medium' : 'text-[#333] hover:text-[#531dab]'}
+      >
+        {item.label}
+      </Link>
+    ),
+  }));
 
   return (
     <Layout className="h-screen bg-[#f5f5f5]">
