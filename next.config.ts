@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['better-sqlite3'],
   // 配置 turbopack
   turbopack: {},
-  // 测试
+  
 };
 
 export default nextConfig;
