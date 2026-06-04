@@ -163,8 +163,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <Layout className=" bg-[#f5f5f5] flex flex-col h-screen">
         {/* 顶部标题栏 - 固定 */}
         <Header className="bg-white border-b border-[#e8e8e8] px-[24px] h-[64px] flex items-center justify-between sticky top-0 z-10">
-          <h1 className="text-[16px] font-semibold text-[#fff] tracking-tight">
-            {pathname === '/admin' ? '概览' : pathname === '/admin/users' ? '用户列表' : pathname === '/admin/redemption' ? '兑换码管理' : pathname === '/admin/credit-records' ? '消费记录' : pathname === '/admin/messages' ? '消息管理' : '管理后台'}
+          <h1 className="text-[16px] font-semibold text-[#333] tracking-tight">
+            {(() => {
+              const titles: Record<string, string> = {
+                '/admin': '概览',
+                '/admin/users': '用户列表',
+                '/admin/redemption': '兑换码管理',
+                '/admin/credit-records': '消费记录',
+                '/admin/messages': '消息管理',
+              };
+              return titles[pathname] || '管理后台';
+            })()}
           </h1>
           <Link
             href="/"
