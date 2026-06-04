@@ -14,7 +14,7 @@ if (!fs.existsSync(IMAGES_DIR)) {
 /**
  * 从 URL 下载图片并保存到本地
  * @param imageUrl 外部图片 URL
- * @returns 本地图片 URL（相对路径）
+ * @returns 本地图片 URL（通过 API 路由访问）
  */
 export async function saveImageLocally(imageUrl: string): Promise<string> {
   try {
@@ -38,8 +38,8 @@ export async function saveImageLocally(imageUrl: string): Promise<string> {
     fs.writeFileSync(filepath, buffer);
     console.log('[ImageStorage] Saved image to:', filepath);
 
-    // 返回本地 URL（相对于 public 目录）
-    return `/images/${filename}`;
+    // 返回本地 URL（通过 API 路由访问）
+    return `/api/images/file/${filename}`;
   } catch (error) {
     console.error('[ImageStorage] Error saving image:', error);
     // 返回原始 URL 作为备选
@@ -49,15 +49,15 @@ export async function saveImageLocally(imageUrl: string): Promise<string> {
 
 /**
  * 删除本地图片
- * @param localUrl 本地图片 URL
+ * @param localUrl 本地图片 URL（/api/images/file/xxx.png 格式）
  */
 export function deleteLocalImage(localUrl: string): boolean {
   try {
-    if (!localUrl.startsWith('/images/')) {
+    if (!localUrl.startsWith('/api/images/file/')) {
       return false;
     }
 
-    const filename = localUrl.replace('/images/', '');
+    const filename = localUrl.replace('/api/images/file/', '');
     const filepath = path.join(IMAGES_DIR, filename);
 
     if (fs.existsSync(filepath)) {
@@ -79,7 +79,7 @@ export function getLocalImages(): string[] {
   try {
     const files = fs.readdirSync(IMAGES_DIR);
     return files.filter(f => f.endsWith('.png') || f.endsWith('.jpg') || f.endsWith('.jpeg'))
-      .map(f => `/images/${f}`);
+      .map(f => `/api/images/file/${f}`);
   } catch (error) {
     console.error('[ImageStorage] Error reading images:', error);
     return [];
