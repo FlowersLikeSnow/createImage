@@ -1,14 +1,12 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { Avatar, Dropdown, Button, Tag } from 'antd';
-import { UserOutlined, SettingOutlined, LogoutOutlined, CrownOutlined, SettingFilled } from '@ant-design/icons';
+import { UserOutlined, SettingOutlined, LogoutOutlined, CrownOutlined } from '@ant-design/icons';
 import { useAuth } from './AuthContext';
 
 export function UserAvatar() {
   const { user, showLoginModal, logout, showProfileModal } = useAuth();
-  const [registerModalVisible, setRegisterModalVisible] = useState(false);
 
   if (!user) {
     return (
