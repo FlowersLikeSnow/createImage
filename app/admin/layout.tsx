@@ -15,6 +15,9 @@ import {
   MessageOutlined,
 } from '@ant-design/icons';
 
+// 强制动态渲染，禁用静态缓存
+export const dynamic = 'force-dynamic';
+
 const { Sider, Content, Header } = Layout;
 
 interface AdminLayoutProps {
