@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { Sender } from '@ant-design/x';
-import { Button, Spin, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNumber, Menu, message, Card } from 'antd';
-import { PaperClipOutlined } from '@ant-design/icons';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { Attachments, AttachmentsProps, Sender } from '@ant-design/x';
+import { Button, Spin, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNumber, Menu, message, Card, GetRef, GetProp } from 'antd';
+import { CloudUploadOutlined, PaperClipOutlined } from '@ant-design/icons';
 import { Sparkles, Bot, Coins } from 'lucide-react';
 import { useGenerate } from '@/hooks/useGenerate';
 import { useAuth } from '@/components/auth/AuthContext';
@@ -14,6 +14,7 @@ import type { Message } from '@/types/conversation';
 import { DEFAULT_IMAGE_SIZE, getCreditBySize } from '@/lib/utils/size-config';
 import { SizeSelector } from './SizeSelector';
 import { ImageCard } from './ImageCard';
+import React from 'react';
 
 // 菜单路由配置
 const menuItems = [
@@ -209,6 +210,39 @@ export function ChatContainer() {
     setRedeemModalVisible(true);
   }, [requireAuth]);
 
+  const [open, setOpen] = useState(false);
+  const senderRef = React.useRef<GetRef<typeof Sender>>(null);
+  const attachmentsRef = useRef<GetRef<typeof Attachments>>(null);
+  const [items, setItems] = useState<GetProp<AttachmentsProps, 'items'>>([]);
+  const senderHeader = (
+    <Sender.Header
+      title="参考图片上传"
+      styles={{
+        content: {
+          padding: 0,
+        },
+      }}
+      open={open}
+      onOpenChange={setOpen}
+      forceRender
+    >
+      <Attachments
+        ref={attachmentsRef}
+        maxCount={1}
+        beforeUpload={() => false}
+        items={items}
+        onChange={({ fileList }) => setItems(fileList)}
+        placeholder={() => ({
+          icon: <CloudUploadOutlined />,
+          title: '点击或拖动文件上传',
+          description: '仅图片上传,图片大小限制5MB',
+        })}
+        getDropContainer={() => senderRef.current?.nativeElement}
+      />
+    </Sender.Header>
+  );
+
+
   return (
     <div className="flex h-screen">
       {/* 左侧菜单列表 */}
@@ -259,12 +293,12 @@ export function ChatContainer() {
                   兑换
                 </Button>
                 <Tooltip title="暂未开放">
-                <Button size="small" shape="round" color='orange' variant="filled"
-                  style={{ fontSize: 12 }}
-                  disabled
-                  icon={<Sparkles size={12} color='#531dab' strokeWidth={1} />}>
-                  充值
-                </Button>
+                  <Button size="small" shape="round" color='orange' variant="filled"
+                    style={{ fontSize: 12 }}
+                    disabled
+                    icon={<Sparkles size={12} color='#531dab' strokeWidth={1} />}>
+                    充值
+                  </Button>
                 </Tooltip>
               </Flex>
             </div>
@@ -314,6 +348,8 @@ export function ChatContainer() {
         <div className="bg-white p-4">
           <div className="mx-auto max-w-[1280px] flex gap-2">
             <Sender
+              ref={senderRef}
+              header={senderHeader}
               value={inputValue}
               onChange={setInputValue}
               onSubmit={handleSend}
@@ -326,8 +362,8 @@ export function ChatContainer() {
                 const { SendButton, SpeechButton } = info.components;
                 return <Flex justify="space-between" align="center">
                   <Flex gap="small" align="center">
-                    <Tooltip title="仅图片上传,图片大小限制5MB">
-                      <Button shape='circle' disabled type="text" icon={<PaperClipOutlined />} />
+                    <Tooltip title="参考图片上传">
+                      <Button shape='circle' type="text" icon={<PaperClipOutlined />} onClick={() => setOpen(!open)} />
                     </Tooltip>
                     <Button
                       color={expandLoading ? 'purple' : 'default'}
@@ -373,13 +409,13 @@ export function ChatContainer() {
                       />
                     </Tooltip>
                     <Divider orientation="vertical" />
-                    
-                  <Tooltip placement='topRight' title={
+
+                    <Tooltip placement='topRight' title={
                       numImages === 1
                         ? `单次生成 (预估 ${getCreditBySize(imageSize).toFixed(2)} 积分)`
                         : `并发生成 ${numImages} 张 (预估 ${(getCreditBySize(imageSize) * numImages).toFixed(1)} 积分)`
                     }>
-                    <SendButton disabled={inputValue.trim() === '' || expandLoading || loading} />
+                      <SendButton disabled={inputValue.trim() === '' || expandLoading || loading} />
                     </Tooltip>
                   </Flex>
                 </Flex>;

@@ -112,16 +112,17 @@ export function RedeemModal({ visible, onClose, onSuccess }: RedeemModalProps) {
       open={visible}
       onCancel={onClose}
       footer={[
-        <Button onClick={onClose}>取消</Button>,
-          <Button
-            type="primary"
-            loading={loading}
-            onClick={handleRedeem}
-            disabled={!code || !isCodeComplete}
-            icon={<GiftOutlined />}
-          >
-            兑换
-          </Button>
+        <Button key="cancel" onClick={onClose}>取消</Button>,
+        <Button
+          key="redeem"
+          type="primary"
+          loading={loading}
+          onClick={handleRedeem}
+          disabled={!code || !isCodeComplete}
+          icon={<GiftOutlined />}
+        >
+          兑换
+        </Button>
       ]}
       width={400}
       mask={{ closable: false }}

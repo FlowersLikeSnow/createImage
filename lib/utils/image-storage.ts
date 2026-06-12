@@ -1,87 +1,31 @@
-import fs from 'fs';
-import path from 'path';
-import { nanoid } from 'nanoid';
-
-// 图片存储目录（相对于项目根目录）
-const IMAGES_DIR = path.join(process.cwd(), 'public', 'images');
-
-// 确保目录存在
-if (!fs.existsSync(IMAGES_DIR)) {
-  fs.mkdirSync(IMAGES_DIR, { recursive: true });
-  console.log('[ImageStorage] Created directory:', IMAGES_DIR);
-}
+import { downloadAndUpload, deleteFile, extractKeyFromUrl } from './qiniu-upload';
 
 /**
- * 从 URL 下载图片并保存到本地
+ * 从 URL 下载图片并上传到七牛云
  * @param imageUrl 外部图片 URL
- * @returns 本地图片 URL（通过 API 路由访问）
+ * @returns 七牛云图片 URL
  */
-export async function saveImageLocally(imageUrl: string): Promise<string> {
-  try {
-    // 生成唯一文件名
-    const filename = `${nanoid(12)}.png`;
-    const filepath = path.join(IMAGES_DIR, filename);
-
-    // 下载图片
-    console.log('[ImageStorage] Downloading image from:', imageUrl);
-    const response = await fetch(imageUrl);
-
-    if (!response.ok) {
-      throw new Error(`Failed to download image: ${response.status}`);
-    }
-
-    // 获取图片数据
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    // 保存到本地
-    fs.writeFileSync(filepath, buffer);
-    console.log('[ImageStorage] Saved image to:', filepath);
-
-    // 返回本地 URL（通过 API 路由访问）
-    return `/api/images/file/${filename}`;
-  } catch (error) {
-    console.error('[ImageStorage] Error saving image:', error);
-    // 返回原始 URL 作为备选
-    return imageUrl;
-  }
+export async function saveImageToCloud(imageUrl: string): Promise<string> {
+  return downloadAndUpload(imageUrl);
 }
 
 /**
- * 删除本地图片
- * @param localUrl 本地图片 URL（/api/images/file/xxx.png 格式）
+ * 删除七牛云上的图片
+ * @param imageUrl 七牛云图片 URL
  */
-export function deleteLocalImage(localUrl: string): boolean {
-  try {
-    if (!localUrl.startsWith('/api/images/file/')) {
-      return false;
-    }
-
-    const filename = localUrl.replace('/api/images/file/', '');
-    const filepath = path.join(IMAGES_DIR, filename);
-
-    if (fs.existsSync(filepath)) {
-      fs.unlinkSync(filepath);
-      console.log('[ImageStorage] Deleted image:', filepath);
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error('[ImageStorage] Error deleting image:', error);
-    return false;
-  }
+export async function deleteCloudImage(imageUrl: string): Promise<boolean> {
+  return deleteFile(imageUrl);
 }
 
 /**
- * 获取所有本地图片列表
+ * 从 URL 中提取文件 key
+ * @param url 图片 URL
+ * @returns 文件 key
  */
-export function getLocalImages(): string[] {
-  try {
-    const files = fs.readdirSync(IMAGES_DIR);
-    return files.filter(f => f.endsWith('.png') || f.endsWith('.jpg') || f.endsWith('.jpeg'))
-      .map(f => `/api/images/file/${f}`);
-  } catch (error) {
-    console.error('[ImageStorage] Error reading images:', error);
-    return [];
-  }
+export function extractImageKey(url: string): string {
+  return extractKeyFromUrl(url);
 }
+
+// 保留旧函数名作为别名（向后兼容）
+export const saveImageLocally = saveImageToCloud;
+export const deleteLocalImage = deleteCloudImage;

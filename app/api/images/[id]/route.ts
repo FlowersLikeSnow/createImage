@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { messages } from '@/lib/db';
-import { deleteLocalImage } from '@/lib/utils/image-storage';
+import { messages, conversations } from '@/lib/db';
+import { deleteCloudImage } from '@/lib/utils/image-storage';
 import { verifyAuth, withAuthResponse } from '@/lib/auth/middleware';
 
 export async function DELETE(
@@ -16,26 +16,45 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    // 需要找到消息所属的 conversationId
-    const allImages = messages.getAllImages();
-    const msg = allImages.find(m => m.id === id);
+    // 通过用户的对话列表找到消息
+    const userConversations = conversations.getByUserId(authResult.userId!);
+    let targetMsg: any = null;
+    let targetConvId: string = '';
 
-    if (!msg) {
-      return NextResponse.json({ error: '图片不存在' }, { status: 404 });
+    for (const conv of userConversations) {
+      const msgs = messages.getByConversation(conv.id);
+      const found = msgs.find(m => m.id === id);
+      if (found) {
+        targetMsg = found;
+        targetConvId = conv.id;
+        break;
+      }
     }
 
-    // 删除本地图片文件
-    if (msg.generatedImages && msg.generatedImages.length > 0) {
-      const localUrl = msg.generatedImages[0].url;
-      deleteLocalImage(localUrl);
+    // 即使找不到消息，也返回成功（图片已经不存在了）
+    if (!targetMsg) {
+      return NextResponse.json({
+        success: true,
+        data: { id, message: '图片记录已不存在' },
+      });
+    }
+
+    // 尝试删除七牛云上的图片文件（即使失败也继续删除数据库记录）
+    if (targetMsg.generatedImages && targetMsg.generatedImages.length > 0) {
+      const imageUrl = targetMsg.generatedImages[0].url;
+      // 只有是七牛云 URL 才尝试删除
+      if (imageUrl.includes('qiniu.upload.servers.lijundong.cn')) {
+        try {
+          await deleteCloudImage(imageUrl);
+        } catch (deleteError) {
+          // 文件删除失败不影响数据库记录删除
+          console.warn('[API /images/[id]] Cloud file delete failed:', deleteError);
+        }
+      }
     }
 
     // 删除数据库记录
-    const deleted = messages.delete(id, msg.conversationId);
-
-    if (!deleted) {
-      return NextResponse.json({ error: '删除失败' }, { status: 500 });
-    }
+    messages.delete(id, targetConvId);
 
     return NextResponse.json({
       success: true,

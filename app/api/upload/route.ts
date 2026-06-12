@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
-import { nanoid } from 'nanoid';
+import { uploadFile } from '@/lib/utils/qiniu-upload';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,23 +20,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '文件大小不能超过10MB' }, { status: 400 });
     }
 
-    // 生成文件名
-    const ext = file.name.split('.').pop() || 'png';
-    const fileName = `${nanoid()}.${ext}`;
-    const filePath = join(process.cwd(), 'public', 'uploads', fileName);
-
-    // 写入文件
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
-
-    // 返回URL
-    const url = `/uploads/${fileName}`;
+    // 上传到七牛云
+    const result = await uploadFile(file);
 
     return NextResponse.json({
       success: true,
-      url,
-      fileName,
+      url: result.url,
+      fileName: result.key,
     });
   } catch (error) {
     console.error('[API /upload] error:', error);
