@@ -85,6 +85,8 @@ export function ChatContainer() {
     setImages(prev => [...pendingCards, ...prev]);
     if (!keepPrompt) {
       setInputValue('');
+      setItems([]);
+      setOpen(false);
     }
 
     // 发送按钮立即停止 loading
