@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 import { nanoid } from 'nanoid';
+import Big from 'big.js';
 import type { User, Session, UserRole } from '@/types/user';
 import type { RedemptionCode, RedemptionStats } from '@/types/redemption';
 import type { Message, Conversation, MessageStatus, MessageRole, GeneratedImage } from '@/types/conversation';
@@ -190,9 +191,9 @@ export const users = {
       passwordHash: row.password_hash,
       nickname: row.nickname,
       avatar: row.avatar,
-      credits: row.credits ?? DEFAULT_CREDITS,
-      consumedCredits: row.consumed_credits ?? 0,
-      totalCredits: row.total_credits ?? DEFAULT_CREDITS,
+      credits: Number(Big(row.credits ?? DEFAULT_CREDITS).round(2)), // 修正精度
+      consumedCredits: Number(Big(row.consumed_credits ?? 0).round(2)), // 修正精度
+      totalCredits: Number(Big(row.total_credits ?? DEFAULT_CREDITS).round(2)), // 修正精度
       role: (row.role || 'user') as UserRole,
       createdAt: row.created_at,
       lastLoginAt: row.last_login_at,
@@ -210,9 +211,9 @@ export const users = {
       passwordHash: row.password_hash,
       nickname: row.nickname,
       avatar: row.avatar,
-      credits: row.credits ?? DEFAULT_CREDITS,
-      consumedCredits: row.consumed_credits ?? 0,
-      totalCredits: row.total_credits ?? DEFAULT_CREDITS,
+      credits: Number(Big(row.credits ?? DEFAULT_CREDITS).round(2)), // 修正精度
+      consumedCredits: Number(Big(row.consumed_credits ?? 0).round(2)), // 修正精度
+      totalCredits: Number(Big(row.total_credits ?? DEFAULT_CREDITS).round(2)), // 修正精度
       role: (row.role || 'user') as UserRole,
       createdAt: row.created_at,
       lastLoginAt: row.last_login_at,
@@ -280,12 +281,12 @@ export const users = {
     const level = getSizeLevel(imageSize);
     const deductAmount = (CREDIT_CONFIG[level as keyof typeof CREDIT_CONFIG] || CREDIT_CONFIG['1K']) * count;
 
-    if (user.credits < deductAmount) {
+    if (Big(user.credits).lt(deductAmount)) {
       return { success: false, error: '积分不足' };
     }
 
-    const newCredits = user.credits - deductAmount;
-    const newConsumedCredits = user.consumedCredits + deductAmount;
+    const newCredits = Number(Big(user.credits).minus(deductAmount));
+    const newConsumedCredits = Number(Big(user.consumedCredits).plus(deductAmount));
     users.update(id, { credits: newCredits, consumedCredits: newConsumedCredits });
 
     // 创建积分扣除记录
@@ -307,8 +308,8 @@ export const users = {
       return { success: false, error: '用户不存在' };
     }
 
-    const newCredits = user.credits + amount;
-    const newConsumedCredits = user.consumedCredits - amount;
+    const newCredits = Number(Big(user.credits).plus(amount));
+    const newConsumedCredits = Number(Big(user.consumedCredits).minus(amount));
     users.update(id, { credits: newCredits, consumedCredits: Math.max(0, newConsumedCredits) });
 
     // 创建积分退还记录
@@ -333,12 +334,12 @@ export const users = {
       return { success: false, error: '用户不存在' };
     }
 
-    const newCredits = user.credits + amount;
+    const newCredits = Number(Big(user.credits).plus(amount));
     if (newCredits < 0) {
       return { success: false, error: '调整后积分不能为负数' };
     }
 
-    const newTotalCredits = amount > 0 ? user.totalCredits + amount : user.totalCredits;
+    const newTotalCredits = amount > 0 ? Number(Big(user.totalCredits).plus(amount)) : user.totalCredits;
     users.update(id, { credits: newCredits, totalCredits: newTotalCredits });
 
     // 创建积分调整记录
@@ -348,7 +349,7 @@ export const users = {
       INSERT INTO credit_records (id, user_id, type, amount, balance_after, description, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
-    recordStmt.run(nanoid(), id, amount, newCredits, remark || `管理员调整积分`, now);
+    recordStmt.run(nanoid(), id, type, amount, newCredits, remark || `管理员调整积分`, now);
 
     console.log('[SQLite] Admin adjusted credits:', amount, 'for user:', id, 'by operator:', operatorId, 'new credits:', newCredits);
     return { success: true, credits: newCredits };
@@ -364,9 +365,9 @@ export const users = {
       passwordHash: row.password_hash,
       nickname: row.nickname,
       avatar: row.avatar,
-      credits: row.credits ?? DEFAULT_CREDITS,
-      consumedCredits: row.consumed_credits ?? 0,
-      totalCredits: row.total_credits ?? DEFAULT_CREDITS,
+      credits: Number(Big(row.credits ?? DEFAULT_CREDITS).round(2)), // 修正精度
+      consumedCredits: Number(Big(row.consumed_credits ?? 0).round(2)), // 修正精度
+      totalCredits: Number(Big(row.total_credits ?? DEFAULT_CREDITS).round(2)), // 修正精度
       role: (row.role || 'user') as UserRole,
       createdAt: row.created_at,
       lastLoginAt: row.last_login_at,
@@ -550,10 +551,11 @@ export const redemptionCodes = {
       if (!user) {
         return { success: false, error: '用户不存在' };
       }
-      const newCredits = user.credits + codeRow.credits;
+      const newCredits = Number(Big(user.credits).plus(codeRow.credits));
+      const newTotalCredits = Number(Big(user.totalCredits).plus(codeRow.credits));
       users.update(userId, {
         credits: newCredits,
-        totalCredits: user.totalCredits + codeRow.credits
+        totalCredits: newTotalCredits
       });
 
       // 创建积分兑换记录

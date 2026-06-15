@@ -5,6 +5,7 @@ import { users } from '@/lib/db/sqlite';
 import { DEFAULT_IMAGE_SIZE, getCreditBySize } from '@/lib/utils/size-config';
 import { saveImageLocally } from '@/lib/utils/image-storage';
 import { verifyAuth, withAuthResponse } from '@/lib/auth/middleware';
+import Big from 'big.js';
 
 export async function POST(request: NextRequest) {
   // 验证登录状态
@@ -29,9 +30,9 @@ export async function POST(request: NextRequest) {
 
     const creditPerImage = getCreditBySize(imageSize || DEFAULT_IMAGE_SIZE);
     const count = Math.min(Math.max(numImages || 1, 1), 10);
-    const totalCreditsNeeded = creditPerImage * count;
+    const totalCreditsNeeded = Number(Big(creditPerImage).times(count));
 
-    if (user.credits < totalCreditsNeeded) {
+    if (Big(user.credits).lt(totalCreditsNeeded)) {
       return NextResponse.json({
         success: false,
         error: `积分不足，需要 ${totalCreditsNeeded.toFixed(2)} 积分，当前剩余 ${user.credits.toFixed(2)} 积分`,
@@ -156,17 +157,17 @@ export async function POST(request: NextRequest) {
 
     // 失败的图片还原积分
     const failedCount = errors.length;
-    const creditsRefunded = failedCount * creditPerImage;
+    const creditsRefunded = Number(Big(creditPerImage).times(failedCount));
     if (failedCount > 0) {
       const updatedUser = users.getById(authResult.userId!);
       if (updatedUser) {
-        remainingCredits = updatedUser.credits + creditsRefunded;
+        remainingCredits = Number(Big(updatedUser.credits).plus(creditsRefunded));
         users.update(authResult.userId!, { credits: remainingCredits });
         console.log('[API /generate] Refunded credits:', creditsRefunded, 'for', failedCount, 'failed images');
       }
     }
 
-    const creditsDeducted = (count - failedCount) * creditPerImage;
+    const creditsDeducted = Number(Big(creditPerImage).times(count - failedCount));
 
     return NextResponse.json({
       success: true,

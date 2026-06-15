@@ -18,13 +18,22 @@ interface GenerateResult {
   images: Array<{ url: string; id: string; messageId: string; prompt: string }>;
   errors: Array<{ messageId: string; error: string }>;
   revisedPrompt?: string;
+  credits?: {
+    deducted: number;
+    remaining: number;
+  };
+}
+
+interface GenerateError {
+  error: string;
+  isCreditInsufficient: boolean;
 }
 
 export function useGenerate() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenerateResult | null>(null);
 
-  const generate = async (params: GenerateParams): Promise<GenerateResult | null> => {
+  const generate = async (params: GenerateParams): Promise<{ data?: GenerateResult; error?: GenerateError } | null> => {
     try {
       const response = await fetchWithAuth('/api/generate', {
         method: 'POST',
@@ -40,11 +49,15 @@ export function useGenerate() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || '生图失败');
+        // 检查是否是积分不足错误
+        const errorMsg = data.error || '生图失败';
+        const isCreditInsufficient = errorMsg.includes('积分不足');
+
+        return { error: { error: errorMsg, isCreditInsufficient } };
       }
 
       setResult(data.data);
-      return data.data;
+      return { data: data.data };
     } catch (error) {
       console.error('[useGenerate] error:', error);
       return null;

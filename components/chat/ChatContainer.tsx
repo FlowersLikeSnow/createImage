@@ -99,41 +99,57 @@ export function ChatContainer() {
       imageSize,
       numImages,
     }).then(result => {
-      if (result) {
+      if (result?.error) {
+        // 检查是否是积分不足
+        if (result.error.isCreditInsufficient) {
+          // 积分不足：移除占位卡片，显示 message 提示
+          setImages(prev => prev.filter(m => !tempIds.includes(m.id)));
+          message.error(result.error.error);
+          refreshUser(); // 刷新用户信息（积分可能已更新）
+        } else {
+          // 其他错误：保留占位卡片，标记为失败
+          setImages(prev => prev.map(m =>
+            tempIds.includes(m.id) ? { ...m, status: 'failed', error: result.error!.error } : m
+          ));
+        }
+      } else if (result?.data) {
         // 更新图片列表：移除占位卡片，添加真实的图片
         setImages(prev => {
           const filtered = prev.filter(m => !tempIds.includes(m.id));
 
           // 添加成功的图片
-          const successImages: Message[] = result.images.map((img, idx) => ({
+          const successImages: Message[] = result.data!.images.map((img, idx) => ({
             id: img.messageId,
             userId: user?.id || '',
-            conversationId: result.conversationId,
+            conversationId: result.data!.conversationId,
             role: 'assistant',
             content: img.prompt,
             generatedImages: [{ url: img.url, id: img.id }],
             status: 'completed',
-            createdAt: Date.now() - result.images.length + idx,
+            createdAt: Date.now() - result.data!.images.length + idx,
           }));
 
           // 添加失败的图片
-          const failedImages: Message[] = result.errors.map((err, idx) => ({
+          const failedImages: Message[] = result.data!.errors.map((err, idx) => ({
             id: err.messageId,
             userId: user?.id || '',
-            conversationId: result.conversationId,
+            conversationId: result.data!.conversationId,
             role: 'assistant',
             content: prompt.trim(),
             status: 'failed',
             error: err.error,
-            createdAt: Date.now() - result.images.length - result.errors.length + idx,
+            createdAt: Date.now() - result.data!.images.length - result.data!.errors.length + idx,
           }));
 
           return [...successImages, ...failedImages, ...filtered];
         });
+
+        // 刷新用户信息（积分已扣除）
+        refreshUser();
       } else {
-        // 所有请求失败，更新占位卡片状态
+        // 请求完全失败（网络错误等）
         setImages(prev => prev.map(m =>
-          tempIds.includes(m.id) ? { ...m, status: 'failed', error: '生图失败' } : m
+          tempIds.includes(m.id) ? { ...m, status: 'failed', error: '生图失败，请重试' } : m
         ));
       }
     });
