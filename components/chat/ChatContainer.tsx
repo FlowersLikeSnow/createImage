@@ -24,15 +24,21 @@ const menuItems = [
 export function ChatContainer() {
   const { loading, generate, startSending, stopSending } = useGenerate();
   const { requireAuth, user, refreshUser } = useAuth();
-  const [numImages, setNumImages] = useState(1);
-  const [keepPrompt, setKeepPrompt] = useState(false);
   const [images, setImages] = useState<Message[]>([]);
   const [activeMenu, setActiveMenu] = useState('ai-image');
+  const [numImages, setNumImages] = useState(1);
+  const [keepPrompt, setKeepPrompt] = useState(false);
   const [imageSize, setImageSize] = useState(DEFAULT_IMAGE_SIZE);
   const [expandLoading, setExpandLoading] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [loadingImages, setLoadingImages] = useState(true);
   const [redeemModalVisible, setRedeemModalVisible] = useState(false);
+
+  // 计算所需积分
+  const requiredCredits = getCreditBySize(imageSize) * numImages;
+  const userCredits = user?.credits ?? 0;
+  const hasEnoughCredits = userCredits >= requiredCredits;
+  const isSendDisabled = inputValue.trim() === '' || expandLoading || loading || !hasEnoughCredits;
 
   const loadImages = useCallback(async () => {
     setLoadingImages(true);
@@ -429,11 +435,13 @@ export function ChatContainer() {
                     <Divider orientation="vertical" />
 
                     <Tooltip placement='topRight' title={
-                      numImages === 1
-                        ? `单次生成 (预估 ${getCreditBySize(imageSize).toFixed(2)} 积分)`
-                        : `并发生成 ${numImages} 张 (预估 ${(getCreditBySize(imageSize) * numImages).toFixed(1)} 积分)`
+                      !hasEnoughCredits
+                        ? `积分不足 (当前 ${userCredits.toFixed(2)}，需要 ${requiredCredits.toFixed(2)} 积分)`
+                        : numImages === 1
+                          ? `单次生成 (预估 ${getCreditBySize(imageSize).toFixed(2)} 积分)`
+                          : `并发生成 ${numImages} 张 (预估 ${(getCreditBySize(imageSize) * numImages).toFixed(2)} 积分)`
                     }>
-                      <SendButton disabled={inputValue.trim() === '' || expandLoading || loading} />
+                      <SendButton disabled={isSendDisabled} />
                     </Tooltip>
                   </Flex>
                 </Flex>;
