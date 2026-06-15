@@ -88,7 +88,15 @@ Protected by role check in [app/admin/layout.tsx](app/admin/layout.tsx).
 
 ### Image Storage
 
-Generated images saved to `public/images/` via [lib/utils/image-storage.ts](lib/utils/image-storage.ts).
+Images uploaded to Qiniu Cloud Storage via [lib/utils/qiniu-upload.ts](lib/utils/qiniu-upload.ts). All images stored under configured folder (default: `GPT-Image-2`).
+
+Key functions:
+- `uploadBuffer()` - Upload Buffer to Qiniu
+- `uploadFile()` - Upload File object to Qiniu
+- `downloadAndUpload()` - Download from URL and re-upload to Qiniu
+- `deleteFile()` - Delete file from Qiniu
+
+Image URLs use Qiniu domain format: `http://${QINIU_DOMAIN}/${folder}/${filename}`
 
 ## Environment Variables
 
@@ -104,6 +112,14 @@ NEWAPI_MODEL=model-name
 LLM_API_KEY=your-api-key
 LLM_BASE_URL=https://your-api-endpoint
 LLM_MODEL=model-name
+
+# Qiniu Cloud Storage
+QINIU_ACCESS_KEY=your-access-key
+QINIU_SECRET_KEY=your-secret-key
+QINIU_BUCKET=your-bucket
+QINIU_ZONE=z2  # z0:华东, z1:华北, z2:华南
+QINIU_DOMAIN=your-domain
+QINIU_FOLDER=GPT-Image-2  # Upload folder path
 ```
 
 ## Key Types
