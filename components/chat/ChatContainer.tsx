@@ -253,13 +253,38 @@ export function ChatContainer() {
       <Attachments
         ref={attachmentsRef}
         maxCount={1}
-        beforeUpload={() => false}
+        accept="image/*"
+        beforeUpload={(file) => {
+          // 验证文件类型
+          if (!file.type.startsWith('image/')) {
+            message.error('只能上传图片文件');
+            return false;
+          }
+          // 验证文件大小 (5MB = 5 * 1024 * 1024)
+          if (file.size > 5 * 1024 * 1024) {
+            message.error('图片大小不能超过5MB');
+            return false;
+          }
+          return false; // 阻止自动上传，手动处理
+        }}
         items={items}
-        onChange={({ fileList }) => setItems(fileList)}
+        onChange={({ fileList }) => {
+          // 过滤掉不符合条件的文件
+          const validFiles = fileList.filter(file => {
+            if (file.type && !file.type.startsWith('image/')) {
+              return false;
+            }
+            if (file.size && file.size > 5 * 1024 * 1024) {
+              return false;
+            }
+            return true;
+          });
+          setItems(validFiles);
+        }}
         placeholder={() => ({
           icon: <CloudUploadOutlined />,
-          title: '点击或拖动文件上传',
-          description: '仅图片上传,图片大小限制5MB',
+          title: '点击或拖动图片上传',
+          description: '仅支持图片格式，大小限制5MB',
         })}
         getDropContainer={() => senderRef.current?.nativeElement}
       />
