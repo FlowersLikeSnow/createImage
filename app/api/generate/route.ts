@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
     const images: Array<{ url: string; id: string; messageId: string; prompt: string }> = [];
     const errors: Array<{ messageId: string; error: string }> = [];
 
-    results.forEach((result) => {
+    results.forEach((result, index) => {
       if (result.status === 'fulfilled' && result.value.success && result.value.image) {
         images.push({
           url: result.value.image.url,
@@ -187,6 +187,12 @@ export async function POST(request: NextRequest) {
         errors.push({
           messageId: result.value.messageId,
           error: result.value.error!,
+        });
+      } else if (result.status === 'rejected') {
+        // 处理 Promise reject 的情况（如网络错误、API 异常等）
+        errors.push({
+          messageId: aiMsgIds[index],
+          error: result.reason instanceof Error ? result.reason.message : '生图失败',
         });
       }
     });

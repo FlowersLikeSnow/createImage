@@ -414,7 +414,7 @@ export function ChatContainer() {
                 return <Flex justify="space-between" align="center">
                   <Flex gap="small" align="center">
                     <Tooltip title="参考图片上传">
-                      <Button shape='circle' type="text" icon={<PaperClipOutlined />} onClick={() => setOpen(!open)} />
+                      <Button shape='circle' color='purple' variant={items?.length > 0 ? 'filled' : 'text'} icon={<PaperClipOutlined />} onClick={() => setOpen(!open)} />
                     </Tooltip>
                     <Button
                       color={expandLoading ? 'purple' : 'default'}
@@ -437,7 +437,7 @@ export function ChatContainer() {
                   </Flex>
                   <Flex align="center">
                     <Tooltip title={`语音输入提示词,需要给予麦克风权限`}>
-                      <SpeechButton shape='round' />
+                      <SpeechButton shape='round' color='purple' />
                     </Tooltip>
                     <Divider orientation="vertical" />
                     <Tooltip title={`生成${numImages}张图片,最多10张`}>
