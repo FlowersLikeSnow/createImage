@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this codebase.
 
 ## Project Overview
 
@@ -18,6 +18,7 @@ npm run start        # Start production server on port 3001 (must run from proje
 
 # Quality
 npm run lint         # Run ESLint
+npx tsc --noEmit     # TypeScript type check
 ```
 
 ## Architecture
@@ -27,7 +28,7 @@ npm run lint         # Run ESLint
 Persistent storage using better-sqlite3 in [lib/db/sqlite.ts](lib/db/sqlite.ts). Database file located at `data/users.db` relative to `process.cwd()`.
 
 Main entities:
-- `users` - User accounts with credits, roles, authentication
+- `users` - User accounts with credits, roles, authentication, avatar
 - `sessions` - Login sessions with token expiration
 - `conversations` / `messages` - Chat history and generated images
 - `redemption_codes` - Credit redemption codes
@@ -47,8 +48,14 @@ API routes:
 - `/api/auth/login` - Login returns Bearer token
 - `/api/auth/me` - Get current user info
 - `/api/auth/logout` - Delete session
+- `/api/auth/profile` - Update nickname/avatar
+- `/api/auth/avatar` - Upload avatar to Qiniu (stored in `GPT-Image-2/users/`)
 
 Admin routes require `role === 'admin'`. Admin panel at `/admin/*` uses client-side auth check in layout.
+
+### API Client
+
+[lib/api/client.ts](lib/api/client.ts) provides `fetchWithAuth()` for authenticated requests. Automatically adds Bearer token from localStorage and handles 401 responses.
 
 ### Credit System
 
@@ -64,12 +71,14 @@ Default credits on registration: 0.15 (equals 1K generation).
 
 Credit operations via `users.deductCredits()`, `users.refundCredits()`, `users.adjustCredits()`. All operations logged to `credit_records` table.
 
-### AI Image Generation Adapter Pattern
+### AI Image Generation
 
 Located in [lib/ai/](lib/ai/):
 - `adapter.ts` - `ImageGenAdapter` interface
 - `openai-gpt-image.ts` - OpenAI-compatible adapter using `NEWAPI_*` env vars
 - `index.ts` - Registry: `registerAdapter()`, `getAdapter()`, `generateImage()`
+
+Hook [hooks/useGenerate.ts](hooks/useGenerate.ts) handles client-side generation calls with loading state and error handling.
 
 ### Redemption Code System
 
@@ -95,8 +104,32 @@ Key functions:
 - `uploadFile()` - Upload File object to Qiniu
 - `downloadAndUpload()` - Download from URL and re-upload to Qiniu
 - `deleteFile()` - Delete file from Qiniu
+- `extractKeyFromUrl()` - Extract file key from full URL
 
 Image URLs use Qiniu domain format: `http://${QINIU_DOMAIN}/${folder}/${filename}`
+
+User avatars stored in `GPT-Image-2/users/` subfolder with format `users/{userId}_{timestamp}_{nanoid}.{ext}`.
+
+## Important Notes
+
+### Ant Design X Hydration Issues
+
+Ant Design X components (Sender, Attachments) can cause React hydration mismatches during SSR. Use the `useMounted` hook pattern to defer rendering until client-side:
+
+```tsx
+const useMounted = () => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted;
+};
+
+// In render:
+{!mounted ? <Spin /> : <Sender ... />}
+```
+
+### User Avatar Updates
+
+When updating user avatar via API, always return complete user object including `role` field to prevent state loss in AuthContext. Old avatar should be deleted from Qiniu after successful upload of new one.
 
 ## Environment Variables
 
@@ -128,6 +161,7 @@ QINIU_FOLDER=GPT-Image-2  # Upload folder path
 - [types/conversation.ts](types/conversation.ts) - `Message`, `Conversation`, `MessageStatus`
 - [types/credit-record.ts](types/credit-record.ts) - `CreditRecord`, `CreditRecordType`
 - [types/redemption.ts](types/redemption.ts) - `RedemptionCode`, `RedemptionCodeStatus`
+- [types/ai.ts](types/ai.ts) - `GenParams`, `GenResult`, `EditParams`
 
 ## Tech Stack
 
