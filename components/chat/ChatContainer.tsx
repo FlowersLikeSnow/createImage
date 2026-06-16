@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Attachments, AttachmentsProps, Sender } from '@ant-design/x';
-import { Button, Spin, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNumber, Menu, message, Card, GetRef, GetProp } from 'antd';
+import { Button, Spin, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNumber, Menu, message, Card, GetRef, GetProp, Alert } from 'antd';
 import { CloudUploadOutlined, PaperClipOutlined } from '@ant-design/icons';
 import { Sparkles, Bot, Coins } from 'lucide-react';
 import { useGenerate } from '@/hooks/useGenerate';
@@ -15,6 +15,7 @@ import { DEFAULT_IMAGE_SIZE, getCreditBySize } from '@/lib/utils/size-config';
 import { SizeSelector } from './SizeSelector';
 import { ImageCard } from './ImageCard';
 import React from 'react';
+import Marquee from 'react-fast-marquee';
 
 // 菜单路由配置
 const menuItems = [
@@ -361,9 +362,19 @@ export function ChatContainer() {
       <div className="flex-1 flex flex-col bg-gray-100 p-[20px]">
         {/* 顶部标题栏 */}
         <div className="bg-gray-800 text-white px-6 py-3 flex justify-between items-center">
-          <Typography.Title level={4} className="!text-white !mb-0">
+          <Typography.Title level={4} className="!text-white !mb-0 mt-[5px] whitespace-nowrap">
             AI生图
           </Typography.Title>
+          <div className='flex-auto h-full px-[20px]'>
+              <Alert
+                banner
+                title={
+                  <Marquee pauseOnHover gradient={false}>
+                    ✨ AI生图助手 - 智能图片生成平台 | 支持多种尺寸、并发生成 | 💰 充值兑换在左下角「积分」按钮
+                  </Marquee>
+                }
+              />
+          </div>
           <UserAvatar />
         </div>
 
