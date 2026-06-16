@@ -27,12 +27,12 @@ function getZone() {
 
 // 创建上传配置
 function createUploadConfig(): qiniu.conf.Config {
-  return {
-    zone: getZone(),
-    useHttpsDomain: false,
-    useCdnDomain: false,
-    accelerateUploading: false,
-  } as qiniu.conf.Config;
+  const cfg = new qiniu.conf.Config();
+  cfg.zone = getZone();
+  cfg.useHttpsDomain = false;
+  cfg.useCdnDomain = false;
+  cfg.accelerateUploading = false;
+  return cfg;
 }
 
 // 生成上传 token
