@@ -97,6 +97,9 @@ export async function POST(request: NextRequest) {
           email: user.email,
           nickname: user.nickname,
           avatar: user.avatar,
+          role: user.role,
+          credits: user.credits,
+          createdAt: user.createdAt,
         },
       },
     });
