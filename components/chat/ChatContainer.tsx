@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Attachments, AttachmentsProps, Sender } from '@ant-design/x';
-import { Button, Spin, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNumber, Menu, message, Card, GetRef, GetProp, Alert } from 'antd';
+import { Button, Spin, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNumber, Menu, message, Card, GetRef, GetProp, Alert, Modal } from 'antd';
 import { CloudUploadOutlined, PaperClipOutlined } from '@ant-design/icons';
 import { Sparkles, Bot, Coins } from 'lucide-react';
 import { useGenerate } from '@/hooks/useGenerate';
@@ -20,6 +20,7 @@ import Marquee from 'react-fast-marquee';
 // 菜单路由配置
 const menuItems = [
   { key: 'ai-image', label: 'AI生图' },
+  { key: 'contact', label: '联系客服' },
 ];
 
 export function ChatContainer() {
@@ -34,6 +35,7 @@ export function ChatContainer() {
   const [inputValue, setInputValue] = useState('');
   const [loadingImages, setLoadingImages] = useState(true);
   const [redeemModalVisible, setRedeemModalVisible] = useState(false);
+  const [contactModalVisible, setContactModalVisible] = useState(false); // 客服弹窗状态
 
   // 计算所需积分
   const requiredCredits = getCreditBySize(imageSize) * numImages;
@@ -313,7 +315,13 @@ export function ChatContainer() {
         <Menu
           mode="inline"
           selectedKeys={[activeMenu]}
-          onClick={(e) => setActiveMenu(e.key)}
+          onClick={(e) => {
+            if (e.key === 'contact') {
+              setContactModalVisible(true);
+            } else {
+              setActiveMenu(e.key);
+            }
+          }}
           items={menuItems}
           style={{ border: 'none', background: '#F3F5F7' }}
           className="compact-menu"
@@ -350,7 +358,7 @@ export function ChatContainer() {
                     disabled
                     icon={<Sparkles size={12} color='#531dab' strokeWidth={1} />}>
                     充值
-                  </Button>
+                </Button>
                 </Tooltip>
               </Flex>
             </div>
@@ -495,6 +503,26 @@ export function ChatContainer() {
         onClose={() => setRedeemModalVisible(false)}
         onSuccess={handleRedeemSuccess}
       />
+
+      {/* 联系客服弹窗 */}
+      <Modal
+        title="联系客服"
+        open={contactModalVisible}
+        onCancel={() => setContactModalVisible(false)}
+        footer={null}
+        centered
+      >
+        <div className="flex flex-col items-center">
+          <img
+            src="http://love.img.lijundong.cn/site/wx.png"
+            alt="客服微信"
+            className="w-[300px] h-[300px]"
+          />
+          <Typography.Text className="text-[#666] mt-[16px]">
+            扫描二维码添加客服微信
+          </Typography.Text>
+        </div>
+      </Modal>
     </div>
   );
 }
