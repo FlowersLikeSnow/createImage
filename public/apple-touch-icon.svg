@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
+  <!-- 背景 -->
+  <rect width="180" height="180" rx="20" fill="#531dab"/>
+
+  <!-- AI 星星符号 -->
+  <path d="M90 20 L95 50 L130 55 L100 70 L105 100 L90 80 L75 100 L80 70 L50 55 L85 50 Z" fill="#fff" opacity="0.9"/>
+
+  <!-- 图片框 -->
+  <rect x="30" y="100" width="120" height="60" rx="10" fill="#fff" opacity="0.85"/>
+
+  <!-- 图片内容 -->
+  <line x1="40" y1="115" x2="140" y2="115" stroke="#531dab" stroke-width="4"/>
+  <circle cx="55" cy="135" r="12" fill="#22c55e"/>
+  <path d="M75 125 L105 150 L135 125 L145 135" stroke="#531dab" stroke-width="4" fill="none"/>
+</svg>
