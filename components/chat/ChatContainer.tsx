@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Attachments, AttachmentsProps, Sender } from '@ant-design/x';
-import { Button, Spin, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNumber, Menu, message, Card, GetRef, GetProp, Alert, Modal } from 'antd';
+import { Button, Spin, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNumber, Menu, message, Card, GetRef, GetProp, Alert } from 'antd';
 import { CloudUploadOutlined, PaperClipOutlined } from '@ant-design/icons';
 import { Sparkles, Bot, Coins } from 'lucide-react';
 import { useGenerate } from '@/hooks/useGenerate';
@@ -14,6 +14,7 @@ import type { Message } from '@/types/conversation';
 import { DEFAULT_IMAGE_SIZE, getCreditBySize } from '@/lib/utils/size-config';
 import { SizeSelector } from './SizeSelector';
 import { ImageCard } from './ImageCard';
+import { ContactModal } from './ContactModal';
 import React from 'react';
 import Marquee from 'react-fast-marquee';
 
@@ -518,25 +519,11 @@ export function ChatContainer() {
         onSuccess={handleRedeemSuccess}
       />
 
-      {/* 联系客服弹窗 */}
-      <Modal
-        title="联系客服"
-        open={contactModalVisible}
-        onCancel={() => setContactModalVisible(false)}
-        footer={null}
-        centered
-      >
-        <div className="flex flex-col items-center">
-          <img
-            src="http://love.img.lijundong.cn/site/wx.png"
-            alt="客服微信"
-            className="w-[300px] h-[300px]"
-          />
-          <Typography.Text className="text-[#666] mt-[16px]">
-            扫描二维码添加客服微信
-          </Typography.Text>
-        </div>
-      </Modal>
+      {/* 联系客服/充值弹窗 */}
+      <ContactModal
+        visible={contactModalVisible}
+        onClose={() => setContactModalVisible(false)}
+      />
     </div>
   );
 }
