@@ -124,7 +124,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* 主内容区 - 独立滚动 */}
       <Layout className=" bg-[#f5f5f5] flex flex-col h-screen">
         {/* 顶部标题栏 - 固定 */}
-        <Header className="bg-white border-b border-[#e8e8e8] px-[24px] h-[64px] flex items-center justify-between sticky top-0 z-10">
+        <Header className="px-[24px] h-[64px] flex items-center justify-between sticky top-0 z-10" style={{ background: '#fff', borderBottom: '1px solid #e8e8e8' }}>
           <h1 className="text-[16px] font-semibold text-[#333] tracking-tight">
             {(() => {
               const titles: Record<string, string> = {

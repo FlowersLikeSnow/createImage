@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Table, Spin, Tag, Button, Modal, Form, InputNumber, Input, message, Space } from 'antd';
-import { UserOutlined, CrownOutlined, EditOutlined } from '@ant-design/icons';
+import { UserOutlined, CrownOutlined, EditOutlined, KeyOutlined } from '@ant-design/icons';
 import { fetchWithAuth } from '@/lib/api/client';
 import type { User } from '@/types/user';
 import dayjs from 'dayjs';
@@ -18,8 +18,10 @@ export default function UsersAdminPage() {
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [resetPasswordModalOpen, setResetPasswordModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editForm] = Form.useForm();
+  const [resetPasswordForm] = Form.useForm();
 
   useEffect(() => {
     loadUsers();
@@ -46,6 +48,11 @@ export default function UsersAdminPage() {
     setEditModalOpen(true);
   };
 
+  const handleResetPassword = (user: User) => {
+    setEditingUser(user);
+    setResetPasswordModalOpen(true);
+  };
+
   const handleEditSubmit = async (values: { amount: number; remark: string }) => {
     if (!editingUser) return;
 
@@ -63,6 +70,38 @@ export default function UsersAdminPage() {
         loadUsers();
       } else {
         message.error(data.error || '调整失败');
+      }
+    } catch (error) {
+      message.error('网络错误');
+    }
+  };
+
+  const handleResetPasswordSubmit = async (values: { password: string; confirmPassword: string }) => {
+    if (!editingUser) return;
+
+    if (values.password !== values.confirmPassword) {
+      message.error('两次输入的密码不一致');
+      return;
+    }
+
+    if (values.password.length < 6) {
+      message.error('密码长度至少6位');
+      return;
+    }
+
+    try {
+      const response = await fetchWithAuth(`/api/admin/users/${editingUser.id}/password`, {
+        method: 'PUT',
+        body: JSON.stringify({ password: values.password }),
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        message.success('密码重置成功');
+        setResetPasswordModalOpen(false);
+        resetPasswordForm.resetFields();
+      } else {
+        message.error(data.error || '重置失败');
       }
     } catch (error) {
       message.error('网络错误');
@@ -107,6 +146,8 @@ export default function UsersAdminPage() {
       title: '用户',
       dataIndex: 'nickname',
       key: 'nickname',
+      width: 300,
+      fixed: 'left' as const,
       render: (nickname: string, record: User) => (
         <div className="flex items-center gap-[8px]">
           <div
@@ -200,14 +241,27 @@ export default function UsersAdminPage() {
     {
       title: '操作',
       key: 'actions',
+      fixed: 'right' as const,
+      width: 220,
       render: (_: any, record: User) => (
-        <Button
-          type="link"
-          icon={<EditOutlined />}
-          onClick={() => handleEditCredits(record)}
-        >
-          编辑积分
-        </Button>
+        <Space>
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => handleEditCredits(record)}
+          >
+            编辑积分
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            icon={<KeyOutlined />}
+            onClick={() => handleResetPassword(record)}
+          >
+            重置密码
+          </Button>
+        </Space>
       ),
     },
   ];
@@ -240,6 +294,7 @@ export default function UsersAdminPage() {
           dataSource={users}
           columns={columns}
           rowKey="id"
+          scroll={{ x: 1400 }}
           pagination={{
             pageSize: 20,
             showSizeChanger: true,
@@ -287,6 +342,60 @@ export default function UsersAdminPage() {
             <Input.TextArea
               rows={2}
               placeholder="请输入调整原因（可选）"
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 重置密码弹窗 */}
+      <Modal
+        title={`重置密码 - ${editingUser?.nickname}`}
+        open={resetPasswordModalOpen}
+        onCancel={() => {
+          setResetPasswordModalOpen(false);
+          resetPasswordForm.resetFields();
+        }}
+        onOk={() => resetPasswordForm.submit()}
+        okText="确认重置"
+        cancelText="取消"
+      >
+        <div className="mb-[16px] text-[#666]">
+          用户邮箱：<span className="text-[#333]">{editingUser?.email}</span>
+        </div>
+        <Form
+          form={resetPasswordForm}
+          onFinish={handleResetPasswordSubmit}
+          layout="vertical"
+        >
+          <Form.Item
+            name="password"
+            label="新密码"
+            rules={[
+              { required: true, message: '请输入新密码' },
+              { min: 6, message: '密码长度至少6位' },
+            ]}
+          >
+            <Input.Password
+              placeholder="请输入新密码"
+            />
+          </Form.Item>
+          <Form.Item
+            name="confirmPassword"
+            label="确认密码"
+            rules={[
+              { required: true, message: '请确认新密码' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('password') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('两次输入的密码不一致'));
+                },
+              }),
+            ]}
+          >
+            <Input.Password
+              placeholder="请再次输入新密码"
             />
           </Form.Item>
         </Form>
