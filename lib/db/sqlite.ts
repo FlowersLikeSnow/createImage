@@ -253,6 +253,10 @@ export const users = {
       fields.push('role = ?');
       values.push(data.role);
     }
+    if (data.avatar !== undefined) {
+      fields.push('avatar = ?');
+      values.push(data.avatar);
+    }
 
     if (fields.length === 0) return users.getById(id);
 

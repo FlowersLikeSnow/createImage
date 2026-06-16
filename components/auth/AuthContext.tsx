@@ -19,6 +19,7 @@ interface AuthContextType {
   hideProfileModal: () => void;
   requireAuth: () => boolean;
   updateProfile: (nickname: string) => Promise<{ success: boolean; error?: string }>;
+  updateAvatar: (file: File) => Promise<{ success: boolean; error?: string; avatar?: string }>;
   refreshUser: () => Promise<void>;
 }
 
@@ -165,6 +166,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
+  const updateAvatar = useCallback(async (file: File): Promise<{ success: boolean; error?: string; avatar?: string }> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const token = getToken();
+      const response = await fetch('/api/auth/avatar', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setUser(data.data.user);
+        return { success: true, avatar: data.data.avatar };
+      }
+
+      return { success: false, error: data.error };
+    } catch (error) {
+      console.error('[AuthProvider] updateAvatar error:', error);
+      return { success: false, error: '头像上传失败' };
+    }
+  }, []);
+
   const showLoginModal = useCallback(() => {
     setLoginModalVisible(true);
   }, []);
@@ -203,6 +232,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     hideProfileModal,
     requireAuth,
     updateProfile,
+    updateAvatar,
     refreshUser: checkAuth,
   };
 

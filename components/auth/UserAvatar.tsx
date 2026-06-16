@@ -72,9 +72,10 @@ export function UserAvatar() {
         <Avatar
           className={user.role === 'admin' ? 'bg-gold-500 cursor-pointer' : 'bg-blue-500 cursor-pointer'}
           style={user.role === 'admin' ? { backgroundColor: '#faad14' } : {}}
-          icon={<UserOutlined />}
+          icon={user.avatar ? undefined : <UserOutlined />}
+          src={user.avatar}
         >
-          {user.nickname?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase()}
+          {!user.avatar && (user.nickname?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase())}
         </Avatar>
         <span className="text-white text-sm hidden sm:inline">
           {user.nickname}

@@ -14,20 +14,35 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { nickname } = body;
+    const { nickname, avatar } = body;
+
+    // 至少需要更新一个字段
+    if (!nickname && !avatar) {
+      return NextResponse.json({
+        success: false,
+        error: '请提供要更新的字段',
+      }, { status: 400 });
+    }
 
     // 验证昵称
-    if (!nickname || nickname.trim().length < 2) {
+    if (nickname && nickname.trim().length < 2) {
       return NextResponse.json({
         success: false,
         error: '昵称至少需要2个字符',
       }, { status: 400 });
     }
 
+    // 构建更新数据
+    const updateData: { nickname?: string; avatar?: string } = {};
+    if (nickname) {
+      updateData.nickname = nickname.trim();
+    }
+    if (avatar) {
+      updateData.avatar = avatar;
+    }
+
     // 更新用户信息
-    const user = users.update(authResult.userId!, {
-      nickname: nickname.trim(),
-    });
+    const user = users.update(authResult.userId!, updateData);
 
     if (!user) {
       return NextResponse.json({
