@@ -70,7 +70,7 @@ export class OpenAIGPTImageAdapter implements ImageGenAdapter {
   async edit(params: EditParams): Promise<GenResult> {
     console.log('[OpenAIGPTImageAdapter] edit params:', params);
     try {
-      const apiKey = this.config.apiKey || process.env.NEWAPI_BASE_URL;
+      const apiKey = this.config.apiKey || process.env.NEWAPI_API_KEY; // 修复：使用正确的 API_KEY
       const baseUrlRaw = this.config.baseUrl || process.env.NEWAPI_BASE_URL || '';
       const baseUrl = baseUrlRaw.endsWith('/v1') ? baseUrlRaw : `${baseUrlRaw}/v1`;
 
