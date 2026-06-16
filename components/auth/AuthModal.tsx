@@ -178,6 +178,10 @@ export function AuthModal() {
       footer={null}
       width={400}
     >
+      {/* Logo */}
+      <div className="flex justify-center mb-4">
+        <img src="/logo-128.png" alt="AI生图助手" className="w-[48px] h-[48px]" />
+      </div>
       <Tabs
         activeKey={mode}
         onChange={handleTabChange}

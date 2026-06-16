@@ -83,9 +83,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         {/* Logo 区域 */}
         <div className="h-[64px] flex items-center px-[20px] border-b border-[#e8e8e8]">
           <div className="flex items-center gap-[12px]">
-            <div className="w-[32px] h-[32px] rounded-[8px] bg-[#531dab] flex items-center justify-center">
-              <GiftOutlined className="text-white text-[16px]" style={{color:'#fff'}} />
-            </div>
+            <img src="/logo-64.png" alt="AI生图助手" className="w-[32px] h-[32px] rounded-[8px]" />
             <span className="text-[15px] font-semibold text-[#333] tracking-tight">
               管理后台
             </span>

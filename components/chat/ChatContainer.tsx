@@ -274,9 +274,7 @@ export function ChatContainer() {
         {/* 顶部 AI 标识 */}
         <div className="px-[10px] py-[6px] border-gray-200">
           <Flex align="center" gap="small">
-            <div className='w-[24px] h-[24px] rounded-[8px] bg-[#531dab] from-sky-500 to-indigo-600 flex items-center justify-center shadow-md shadow-sky-500/10 shrink-0'>
-              <Sparkles size={14} color='#fff' strokeWidth={1} />
-            </div>
+            <img src="/logo-64.png" alt="AI生图助手" className='w-[24px] h-[24px] rounded-[8px] shadow-md shrink-0' />
             <Typography.Text className="text-sm font-medium">GPT-Image-2</Typography.Text>
           </Flex>
         </div>
