@@ -413,7 +413,7 @@ export function ChatContainer() {
                 const { SendButton, SpeechButton } = info.components;
                 return <Flex justify="space-between" align="center">
                   <Flex gap="small" align="center">
-                    <Tooltip title="参考图片上传">
+                    <Tooltip title={items?.length > 0 ? '已上传参考图片' : '上传参考图片'}>
                       <Button shape='circle' color='purple' variant={items?.length > 0 ? 'filled' : 'text'} icon={<PaperClipOutlined />} onClick={() => setOpen(!open)} />
                     </Tooltip>
                     <Button
