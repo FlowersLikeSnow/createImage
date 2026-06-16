@@ -129,7 +129,7 @@ export function RedeemModal({ visible, onClose, onSuccess }: RedeemModalProps) {
     >
       <div className="py-4">
         <Typography.Paragraph className="text-gray-500 mb-4">
-          请输入兑换码获取积分
+          请输入兑换码获取积分(联系客服购买兑换码)
         </Typography.Paragraph>
 
         <Input
