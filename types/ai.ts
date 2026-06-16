@@ -6,6 +6,14 @@ export interface GenParams {
   quality?: 'standard' | 'hd';
 }
 
+// 图片编辑参数类型（图生图）
+export interface EditParams {
+  prompt: string;
+  image: File; // 上传的图片文件
+  size?: string;
+  n?: number;
+}
+
 // 生图结果类型
 export interface GenResult {
   images: Array<{

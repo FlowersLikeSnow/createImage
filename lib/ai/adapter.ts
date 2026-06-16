@@ -1,4 +1,4 @@
-import type { GenParams, GenResult } from '@/types/ai';
+import type { GenParams, GenResult, EditParams } from '@/types/ai';
 
 /**
  * 图片生成适配器接口
@@ -13,6 +13,9 @@ export interface ImageGenAdapter {
 
   /** 生成图片 */
   generate(params: GenParams): Promise<GenResult>;
+
+  /** 编辑图片（图生图） */
+  edit(params: EditParams): Promise<GenResult>;
 
   /** 检查是否可用 */
   isAvailable(): Promise<boolean>;

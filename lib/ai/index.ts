@@ -5,7 +5,7 @@ export * from './openai-gpt-image';
 
 import type { ImageGenAdapter } from './adapter';
 import { OpenAIGPTImageAdapter } from './openai-gpt-image';
-import type { GenParams, GenResult } from '@/types/ai';
+import type { GenParams, GenResult, EditParams } from '@/types/ai';
 
 // 已注册的适配器列表
 const adapters: Map<string, ImageGenAdapter> = new Map();
@@ -52,6 +52,14 @@ export function initDefaultAdapter() {
 export async function generateImage(params: GenParams, modelId?: string): Promise<GenResult> {
   const adapter = getAdapter(modelId);
   return adapter.generate(params);
+}
+
+/**
+ * 编辑图片（图生图，便捷方法）
+ */
+export async function editImage(params: EditParams, modelId?: string): Promise<GenResult> {
+  const adapter = getAdapter(modelId);
+  return adapter.edit(params);
 }
 
 // 自动初始化

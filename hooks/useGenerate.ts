@@ -8,7 +8,7 @@ interface GenerateParams {
   prompt: string;
   imageSize?: string;
   conversationId?: string;
-  referenceImage?: string;
+  referenceImage?: File; // 改为 File 类型
   numImages?: number;
 }
 
@@ -35,13 +35,41 @@ export function useGenerate() {
 
   const generate = async (params: GenerateParams): Promise<{ data?: GenerateResult; error?: GenerateError } | null> => {
     try {
+      // 如果有参考图片，使用 FormData
+      if (params.referenceImage) {
+        const formData = new FormData();
+        formData.append('prompt', params.prompt);
+        formData.append('imageSize', params.imageSize || DEFAULT_IMAGE_SIZE);
+        formData.append('numImages', String(params.numImages || 1));
+        formData.append('referenceImage', params.referenceImage);
+        if (params.conversationId) {
+          formData.append('conversationId', params.conversationId);
+        }
+
+        const response = await fetchWithAuth('/api/generate', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          const errorMsg = data.error || '生图失败';
+          const isCreditInsufficient = errorMsg.includes('积分不足');
+          return { error: { error: errorMsg, isCreditInsufficient } };
+        }
+
+        setResult(data.data);
+        return { data: data.data };
+      }
+
+      // 没有参考图片，使用 JSON
       const response = await fetchWithAuth('/api/generate', {
         method: 'POST',
         body: JSON.stringify({
           prompt: params.prompt,
           imageSize: params.imageSize || DEFAULT_IMAGE_SIZE,
           conversationId: params.conversationId,
-          referenceImage: params.referenceImage,
           numImages: params.numImages,
         }),
       });
@@ -49,10 +77,8 @@ export function useGenerate() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        // 检查是否是积分不足错误
         const errorMsg = data.error || '生图失败';
         const isCreditInsufficient = errorMsg.includes('积分不足');
-
         return { error: { error: errorMsg, isCreditInsufficient } };
       }
 

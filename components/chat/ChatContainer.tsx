@@ -72,6 +72,9 @@ export function ChatContainer() {
     if (!prompt.trim()) return;
     if (!requireAuth()) return;  // 未登录则弹出登录弹窗
 
+    // 获取选择的参考图片文件
+    const referenceImageFile = items.length > 0 && items[0].originFileObj ? items[0].originFileObj : undefined;
+
     // 立即添加占位卡片（loading状态）
     const pendingCards: Message[] = [];
     const tempIds: string[] = [];
@@ -104,6 +107,7 @@ export function ChatContainer() {
       prompt: prompt.trim(),
       imageSize,
       numImages,
+      referenceImage: referenceImageFile,
     }).then(result => {
       if (result?.error) {
         // 检查是否是积分不足

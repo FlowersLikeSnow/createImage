@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import type { ImageGenAdapter, AdapterConfig } from './adapter';
-import type { GenParams, GenResult } from '@/types/ai';
+import type { GenParams, GenResult, EditParams } from '@/types/ai';
 import { nanoid } from 'nanoid';
 
 /**
@@ -59,6 +59,66 @@ export class OpenAIGPTImageAdapter implements ImageGenAdapter {
       };
     } catch (error) {
       console.error('[OpenAIGPTImageAdapter] generate error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 编辑图片（图生图）
+   * 使用 NewAPI Images Edits API
+   */
+  async edit(params: EditParams): Promise<GenResult> {
+    console.log('[OpenAIGPTImageAdapter] edit params:', params);
+    try {
+      const apiKey = this.config.apiKey || process.env.NEWAPI_BASE_URL;
+      const baseUrlRaw = this.config.baseUrl || process.env.NEWAPI_BASE_URL || '';
+      const baseUrl = baseUrlRaw.endsWith('/v1') ? baseUrlRaw : `${baseUrlRaw}/v1`;
+
+      // 构建 FormData
+      const formData = new FormData();
+      formData.append('image', params.image);
+      formData.append('prompt', params.prompt);
+      formData.append('model', this.modelId);
+      formData.append('size', params.size || '1024x1024');
+      formData.append('n', String(params.n || 1));
+      formData.append('response_format', 'url');
+
+      console.log('[OpenAIGPTImageAdapter] edit request:', {
+        url: `${baseUrl}/images/edits`,
+        model: this.modelId,
+        hasImage: !!params.image,
+        imageSize: params.image.size,
+      });
+
+      const response = await fetch(`${baseUrl}/images/edits`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[OpenAIGPTImageAdapter] edit API error:', response.status, errorText);
+        throw new Error(`Edit API error: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('[OpenAIGPTImageAdapter] edit response:', result);
+
+      const images = result.data || [];
+      return {
+        images: images.map((img: { url?: string }) => ({
+          url: img.url || '',
+          id: nanoid(),
+        })),
+        metadata: {
+          model: this.modelId,
+        },
+      };
+    } catch (error) {
+      console.error('[OpenAIGPTImageAdapter] edit error:', error);
       throw error;
     }
   }

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateImage } from '@/lib/ai';
+import { generateImage, editImage } from '@/lib/ai';
 import { conversations, messages } from '@/lib/db';
 import { users } from '@/lib/db/sqlite';
 import { DEFAULT_IMAGE_SIZE, getCreditBySize } from '@/lib/utils/size-config';
-import { saveImageLocally } from '@/lib/utils/image-storage';
+import { saveImageToCloud } from '@/lib/utils/image-storage';
 import { verifyAuth, withAuthResponse } from '@/lib/auth/middleware';
 import Big from 'big.js';
 
@@ -15,8 +15,32 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
-    const { prompt, imageSize, conversationId, referenceImage, numImages } = body;
+    // 解析请求（可能是 FormData 或 JSON）
+    let prompt: string;
+    let imageSize: string;
+    let conversationId: string | undefined;
+    let numImages: number;
+    let referenceImage: File | undefined;
+
+    const contentType = request.headers.get('content-type') || '';
+
+    if (contentType.includes('multipart/form-data')) {
+      // FormData 格式（有参考图片）
+      const formData = await request.formData();
+      prompt = formData.get('prompt') as string;
+      imageSize = (formData.get('imageSize') as string) || DEFAULT_IMAGE_SIZE;
+      conversationId = formData.get('conversationId') as string | undefined;
+      numImages = parseInt(formData.get('numImages') as string || '1', 10);
+      referenceImage = formData.get('referenceImage') as File | undefined;
+    } else {
+      // JSON 格式（无参考图片）
+      const body = await request.json();
+      prompt = body.prompt;
+      imageSize = body.imageSize || DEFAULT_IMAGE_SIZE;
+      conversationId = body.conversationId;
+      numImages = body.numImages || 1;
+      referenceImage = undefined;
+    }
 
     if (!prompt) {
       return NextResponse.json({ error: '缺少提示词' }, { status: 400 });
@@ -28,19 +52,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '用户不存在' }, { status: 404 });
     }
 
-    const creditPerImage = getCreditBySize(imageSize || DEFAULT_IMAGE_SIZE);
+    const creditPerImage = getCreditBySize(imageSize);
     const count = Math.min(Math.max(numImages || 1, 1), 10);
     const totalCreditsNeeded = Number(Big(creditPerImage).times(count));
 
-    if (Big(user.credits).lt(totalCreditsNeeded)) {
+    const userCredits = user.credits ?? 0;
+    if (Big(userCredits).lt(totalCreditsNeeded)) {
       return NextResponse.json({
         success: false,
-        error: `积分不足，需要 ${totalCreditsNeeded.toFixed(2)} 积分，当前剩余 ${user.credits.toFixed(2)} 积分`,
+        error: `积分不足，需要 ${totalCreditsNeeded.toFixed(2)} 积分，当前剩余 ${userCredits.toFixed(2)} 积分`,
       }, { status: 400 });
     }
 
     // 先扣除积分
-    const deductResult = users.deductCredits(authResult.userId!, imageSize || DEFAULT_IMAGE_SIZE, count);
+    const deductResult = users.deductCredits(authResult.userId!, imageSize, count);
     if (!deductResult.success) {
       return NextResponse.json({
         success: false,
@@ -52,12 +77,11 @@ export async function POST(request: NextRequest) {
 
     // 创建或获取对话
     let convId = conversationId;
-    let conv = null;
     if (!convId) {
-      conv = conversations.create({ title: prompt.slice(0, 50), userId: authResult.userId! });
+      const conv = conversations.create({ title: prompt.slice(0, 50), userId: authResult.userId! });
       convId = conv.id;
     } else {
-      conv = conversations.get(convId);
+      const conv = conversations.get(convId);
       if (conv) {
         conversations.update(convId, { updatedAt: Date.now() });
       }
@@ -69,12 +93,12 @@ export async function POST(request: NextRequest) {
       conversationId: convId,
       role: 'user',
       content: prompt,
-      referenceImage,
-      imageSize: imageSize || DEFAULT_IMAGE_SIZE,
+      referenceImage: referenceImage ? 'local_file' : undefined,
+      imageSize: imageSize,
       status: 'completed',
     });
 
-    // 创建多个AI消息（pending状态），每个对应一张图片
+    // 创建多个AI消息（pending状态）
     const aiMsgIds: string[] = [];
     for (let i = 0; i < count; i++) {
       const aiMsg = messages.create({
@@ -86,15 +110,27 @@ export async function POST(request: NextRequest) {
       aiMsgIds.push(aiMsg.id);
     }
 
-    // 并行发起多个请求，每个请求 n=1
+    // 并行发起多个请求
     const results = await Promise.allSettled(
       aiMsgIds.map(async (msgId) => {
         try {
-          const result = await generateImage({
-            prompt,
-            size: imageSize || DEFAULT_IMAGE_SIZE,
-            n: 1,
-          });
+          // 根据是否有参考图片调用不同的接口
+          let result;
+          if (referenceImage) {
+            console.log('[API /generate] Using edit API with reference image');
+            result = await editImage({
+              prompt,
+              image: referenceImage,
+              size: imageSize,
+              n: 1,
+            });
+          } else {
+            result = await generateImage({
+              prompt,
+              size: imageSize,
+              n: 1,
+            });
+          }
 
           // 获取外部图片 URL
           const externalUrl = result.images[0]?.url;
@@ -102,21 +138,21 @@ export async function POST(request: NextRequest) {
             throw new Error('未返回图片');
           }
 
-          // 保存图片到本地服务器
-          const localUrl = await saveImageLocally(externalUrl);
-          console.log('[API /generate] Saved image locally:', localUrl);
+          // 保存图片到七牛云
+          const cloudUrl = await saveImageToCloud(externalUrl);
+          console.log('[API /generate] Saved image to cloud:', cloudUrl);
 
-          // 更新AI消息状态（使用本地 URL）
+          // 更新AI消息状态
           messages.update(msgId, convId, {
             status: 'completed',
-            generatedImages: [{ url: localUrl, id: result.images[0].id }],
+            generatedImages: [{ url: cloudUrl, id: result.images[0].id }],
             content: result.metadata?.revisedPrompt || prompt,
           });
 
           return {
             messageId: msgId,
             success: true,
-            image: { url: localUrl, id: result.images[0].id },
+            image: { url: cloudUrl, id: result.images[0].id },
             revisedPrompt: result.metadata?.revisedPrompt,
           };
         } catch (error) {
