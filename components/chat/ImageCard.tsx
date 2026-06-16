@@ -21,6 +21,7 @@ export function ImageCard({ img, onDownload, onDelete }: ImageCardProps) {
   return (
     <Card
       className="w-[280px] shadow-sm"
+      hoverable
       cover={
         isProcessing ? (
           <div className="h-[180px] items-center justify-center bg-gray-50"
