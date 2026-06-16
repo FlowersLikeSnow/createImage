@@ -12,7 +12,7 @@ const config = {
 };
 
 // 获取区域配置
-function getZoneConfig() {
+function getZone() {
   switch (config.zone) {
     case 'z0':
       return qiniu.zone.Zone_z0;
@@ -26,24 +26,12 @@ function getZoneConfig() {
 }
 
 // 创建上传配置
-function createUploadConfig() {
-  const zone = getZoneConfig();
+function createUploadConfig(): qiniu.conf.Config {
   return {
-    zone,
+    zone: getZone(),
     useHttpsDomain: false,
-    accelerateUploading: false,
     useCdnDomain: false,
-  } as qiniu.conf.Config;
-}
-
-// 创建 BucketManager 配置
-function createBucketConfig() {
-  const zone = getZoneConfig();
-  return {
-    zone,
-    useHttpsDomain: false,
     accelerateUploading: false,
-    useCdnDomain: false,
   } as qiniu.conf.Config;
 }
 
@@ -154,7 +142,7 @@ export async function deleteFile(key: string): Promise<boolean> {
     }
 
     const mac = new qiniu.auth.digest.Mac(config.accessKey, config.secretKey);
-    const bucketManager = new qiniu.rs.BucketManager(mac, createBucketConfig());
+    const bucketManager = new qiniu.rs.BucketManager(mac, createUploadConfig());
 
     return new Promise((resolve) => {
       bucketManager.delete(config.bucket, finalKey, (err, body, info) => {
