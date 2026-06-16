@@ -1,0 +1,16 @@
+# robots.txt for AI生图助手
+# 允许所有搜索引擎爬取
+
+User-agent: *
+Allow: /
+
+# 禁止爬取的路径
+Disallow: /api/
+Disallow: /admin/
+Disallow: /auth/
+
+# 站点地图
+Sitemap: http://localhost:3001/sitemap.xml
+
+# 爬取延迟（可选）
+Crawl-delay: 1
