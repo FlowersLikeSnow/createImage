@@ -17,6 +17,13 @@ import { ImageCard } from './ImageCard';
 import React from 'react';
 import Marquee from 'react-fast-marquee';
 
+// Hydration 问题修复：检测是否在客户端
+const useMounted = () => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted;
+};
+
 // 菜单路由配置
 const menuItems = [
   { key: 'ai-image', label: 'AI生图' },
@@ -242,8 +249,9 @@ export function ChatContainer() {
   }, [requireAuth]);
 
   const [open, setOpen] = useState(false);
-  const senderRef = React.useRef<GetRef<typeof Sender>>(null);
+  const senderRef = useRef<GetRef<typeof Sender>>(null);
   const attachmentsRef = useRef<GetRef<typeof Attachments>>(null);
+  const mounted = useMounted();
   const [items, setItems] = useState<GetProp<AttachmentsProps, 'items'>>([]);
   const senderHeader = (
     <Sender.Header
@@ -417,17 +425,22 @@ export function ChatContainer() {
         {/* 输入区域 */}
         <div className="bg-white p-4">
           <div className="mx-auto max-w-[1280px] flex gap-2">
-            <Sender
-              ref={senderRef}
-              header={senderHeader}
-              value={inputValue}
-              onChange={setInputValue}
-              onSubmit={handleSend}
-              loading={loading}
-              disabled={expandLoading}
-              placeholder="输入提示词描述你想要生成的图片..."
-              suffix={false}
-              autoSize={{ minRows: 4, maxRows: 8 }}
+            {!mounted ? (
+              <div className="w-full h-[120px] flex items-center justify-center">
+                <Spin />
+              </div>
+            ) : (
+              <Sender
+                ref={senderRef}
+                header={senderHeader}
+                value={inputValue}
+                onChange={setInputValue}
+                onSubmit={handleSend}
+                loading={loading}
+                disabled={expandLoading}
+                placeholder="输入提示词描述你想要生成的图片..."
+                suffix={false}
+                autoSize={{ minRows: 4, maxRows: 8 }}
               footer={(_, info) => {
                 const { SendButton, SpeechButton } = info.components;
                 return <Flex justify="space-between" align="center">
@@ -492,7 +505,8 @@ export function ChatContainer() {
                   </Flex>
                 </Flex>;
               }}
-            />
+              />
+            )}
           </div>
         </div>
       </div>
