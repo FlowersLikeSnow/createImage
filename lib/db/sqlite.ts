@@ -885,8 +885,9 @@ export const messages = {
   getAllImagesByUser: (userId: string): Message[] => {
     const stmt = db.prepare(`
       SELECT * FROM messages
-      WHERE user_id = ? AND role = 'assistant' AND generated_images IS NOT NULL
+      WHERE user_id = ? AND role = 'assistant'
       ORDER BY created_at DESC
+      LIMIT 100
     `);
     const rows = stmt.all(userId) as any[];
     return rows.map(row => ({
@@ -908,8 +909,9 @@ export const messages = {
   getAllImages: (): Message[] => {
     const stmt = db.prepare(`
       SELECT * FROM messages
-      WHERE role = 'assistant' AND generated_images IS NOT NULL
+      WHERE role = 'assistant'
       ORDER BY created_at DESC
+      LIMIT 100
     `);
     const rows = stmt.all() as any[];
     return rows.map(row => ({

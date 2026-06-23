@@ -8,7 +8,7 @@ interface GenerateParams {
   prompt: string;
   imageSize?: string;
   conversationId?: string;
-  referenceImage?: File; // 改为 File 类型
+  referenceImage?: File;
   numImages?: number;
 }
 

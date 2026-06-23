@@ -44,6 +44,7 @@ export function ChatContainer() {
   const [loadingImages, setLoadingImages] = useState(true);
   const [redeemModalVisible, setRedeemModalVisible] = useState(false);
   const [contactModalVisible, setContactModalVisible] = useState(false); // 客服弹窗状态
+  const [items, setItems] = useState<GetProp<AttachmentsProps, 'items'>>([]);
 
   // 计算所需积分
   const requiredCredits = getCreditBySize(imageSize) * numImages;
@@ -174,7 +175,7 @@ export function ChatContainer() {
         ));
       }
     });
-  }, [imageSize, numImages, keepPrompt, generate, startSending, stopSending, requireAuth, user]);
+  }, [imageSize, numImages, keepPrompt, generate, startSending, stopSending, requireAuth, user, items]);
 
   // 扩写提示词
   const handleExpand = useCallback(async () => {
@@ -253,7 +254,6 @@ export function ChatContainer() {
   const senderRef = useRef<GetRef<typeof Sender>>(null);
   const attachmentsRef = useRef<GetRef<typeof Attachments>>(null);
   const mounted = useMounted();
-  const [items, setItems] = useState<GetProp<AttachmentsProps, 'items'>>([]);
   const senderHeader = (
     <Sender.Header
       title="参考图片上传"
