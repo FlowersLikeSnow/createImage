@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { messages, users, conversations } from '@/lib/db/sqlite';
 import { verifyAuth, requireAdmin } from '@/lib/auth';
-import type { MessageRole, MessageStatus } from '@/types/conversation';
+import type { MessageRole, MessageStatus, GeneratedImage } from '@/types/conversation';
 
 // GET: 查询消息列表
 export async function GET(request: NextRequest) {
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
     role: row.role as MessageRole,
     content: row.content || undefined,
     referenceImage: row.reference_image || undefined,
-    generatedImages: row.generated_images ? JSON.parse(row.generated_images) : undefined,
+    image: row.generated_images ? (JSON.parse(row.generated_images) as GeneratedImage[])?.[0] : undefined,
     imageSize: row.image_size || undefined,
     status: row.status as MessageStatus,
     error: row.error || undefined,

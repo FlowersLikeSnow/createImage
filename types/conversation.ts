@@ -15,7 +15,7 @@ export interface Message {
   role: MessageRole;
   content?: string;
   referenceImage?: string;
-  generatedImages?: GeneratedImage[];
+  image?: GeneratedImage;   // 单张图片
   imageSize?: string;
   expandedPrompt?: string;
   status: MessageStatus;

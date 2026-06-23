@@ -815,7 +815,7 @@ export const messages = {
       role: row.role as MessageRole,
       content: row.content || undefined,
       referenceImage: row.reference_image || undefined,
-      generatedImages: row.generated_images ? JSON.parse(row.generated_images) as GeneratedImage[] : undefined,
+      image: row.generated_images ? (JSON.parse(row.generated_images) as GeneratedImage[])?.[0] : undefined,
       imageSize: row.image_size || undefined,
       expandedPrompt: row.expanded_prompt || undefined,
       status: row.status as MessageStatus,
@@ -836,9 +836,9 @@ export const messages = {
       fields.push('reference_image = ?');
       values.push(data.referenceImage);
     }
-    if (data.generatedImages !== undefined) {
+    if (data.image !== undefined) {
       fields.push('generated_images = ?');
-      values.push(JSON.stringify(data.generatedImages));
+      values.push(JSON.stringify(data.image ? [data.image] : []));
     }
     if (data.imageSize !== undefined) {
       fields.push('image_size = ?');
@@ -896,7 +896,7 @@ export const messages = {
       role: row.role as MessageRole,
       content: row.content || undefined,
       referenceImage: row.reference_image || undefined,
-      generatedImages: row.generated_images ? JSON.parse(row.generated_images) as GeneratedImage[] : undefined,
+      image: row.generated_images ? (JSON.parse(row.generated_images) as GeneratedImage[])?.[0] : undefined,
       imageSize: row.image_size || undefined,
       expandedPrompt: row.expanded_prompt || undefined,
       status: row.status as MessageStatus,
@@ -919,7 +919,7 @@ export const messages = {
       role: row.role as MessageRole,
       content: row.content || undefined,
       referenceImage: row.reference_image || undefined,
-      generatedImages: row.generated_images ? JSON.parse(row.generated_images) as GeneratedImage[] : undefined,
+      image: row.generated_images ? (JSON.parse(row.generated_images) as GeneratedImage[])?.[0] : undefined,
       imageSize: row.image_size || undefined,
       expandedPrompt: row.expanded_prompt || undefined,
       status: row.status as MessageStatus,

@@ -40,8 +40,8 @@ export async function DELETE(
     }
 
     // 尝试删除七牛云上的图片文件（即使失败也继续删除数据库记录）
-    if (targetMsg.generatedImages && targetMsg.generatedImages.length > 0) {
-      const imageUrl = targetMsg.generatedImages[0].url;
+    if (targetMsg.image) {
+      const imageUrl = targetMsg.image.url;
       // 只有是七牛云 URL 才尝试删除
       if (imageUrl.includes('qiniu.upload.servers.lijundong.cn')) {
         try {

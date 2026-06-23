@@ -160,22 +160,19 @@ export default function MessagesAdminPage() {
     },
     {
       title: '图片',
-      dataIndex: 'generatedImages',
-      key: 'generatedImages',
+      dataIndex: 'image',
+      key: 'image',
       width: 100,
-      render: (images: GeneratedImage[]) => (
-        images && images.length > 0 ? (
+      render: (image: GeneratedImage) => (
+        image ? (
           <Image.PreviewGroup>
-            {images.map((img, idx) => (
-              <Image
-                key={idx}
-                src={img.url}
-                width={40}
-                height={40}
-                className="rounded-[4px] object-cover"
-                placeholder={<Spin size="small" />}
-              />
-            ))}
+            <Image
+              src={image.url}
+              width={40}
+              height={40}
+              className="rounded-[4px] object-cover"
+              placeholder={<Spin size="small" />}
+            />
           </Image.PreviewGroup>
         ) : (
           <span className="text-[#999]">-</span>

@@ -16,7 +16,7 @@ export function ImageCard({ img, onDownload, onDelete }: ImageCardProps) {
   const [expanded, setExpanded] = useState(false);
   const isProcessing = img.status === 'processing';
   const isFailed = img.status === 'failed';
-  const hasImage = img.generatedImages && img.generatedImages.length > 0;
+  const hasImage = !!img.image;
 
   return (
     <Card
@@ -35,7 +35,7 @@ export function ImageCard({ img, onDownload, onDelete }: ImageCardProps) {
           </div>
         ) : hasImage ? (
           <Image
-            src={img.generatedImages![0].url}
+            src={img.image!.url}
             alt="generated"
             style={{ height: 180, objectFit: 'cover' }}
             preview={{ mask: '预览' }}
@@ -50,7 +50,7 @@ export function ImageCard({ img, onDownload, onDelete }: ImageCardProps) {
         isProcessing ? [] : [
           hasImage && (
             <Tooltip title="下载" key="download">
-              <DownloadOutlined onClick={() => onDownload(img.generatedImages![0].url)} />
+              <DownloadOutlined onClick={() => onDownload(img.image!.url)} />
             </Tooltip>
           ),
           <Popconfirm

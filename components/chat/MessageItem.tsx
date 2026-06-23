@@ -44,9 +44,9 @@ export function MessageItem({ message, onRegenerate }: MessageItemProps) {
         {/* AI消息 */}
         {!isUser && (
           <div>
-            {message.generatedImages && message.generatedImages.length > 0 ? (
+            {message.image ? (
               <ImagePreview
-                images={message.generatedImages}
+                images={[message.image]}
                 onRegenerate={onRegenerate}
               />
             ) : (

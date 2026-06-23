@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
           // 更新AI消息状态
           messages.update(msgId, convId, {
             status: 'completed',
-            generatedImages: [{ url: cloudUrl, id: result.images[0].id }],
+            image: { url: cloudUrl, id: result.images[0].id },
             content: result.metadata?.revisedPrompt || prompt,
           });
 

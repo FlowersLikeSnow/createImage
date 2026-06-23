@@ -145,7 +145,7 @@ export function ChatContainer() {
             conversationId: result.data!.conversationId,
             role: 'assistant',
             content: img.prompt,
-            generatedImages: [{ url: img.url, id: img.id }],
+            image: { url: img.url, id: img.id },
             status: 'completed',
             createdAt: Date.now() - result.data!.images.length + idx,
           }));
