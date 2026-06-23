@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Attachments, AttachmentsProps, Sender } from '@ant-design/x';
 import { Button, Spin, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNumber, Menu, message, Card, GetRef, GetProp, Alert, Dropdown, MenuProps } from 'antd';
-import { CloudUploadOutlined, PaperClipOutlined, ProfileOutlined } from '@ant-design/icons';
+import { CloudUploadOutlined, FileImageOutlined, PaperClipOutlined, ProfileOutlined } from '@ant-design/icons';
 import { Sparkles, Bot, Coins } from 'lucide-react';
 import { useGenerate } from '@/hooks/useGenerate';
 import { useAuth } from '@/components/auth/AuthContext';
@@ -309,22 +309,7 @@ export function ChatContainer() {
 
 
   const imageItemClick: MenuProps['onClick'] = (item) => {
-    // const { icon, label } = item;
-    // senderRef.current?.insert?.([
-    //   {
-    //     type: 'tag',
-    //     key: `${item.key}_${Date.now()}`,
-    //     props: {
-    //       label: (
-    //         <Flex gap="small">
-    //           {icon}
-    //           {label}
-    //         </Flex>
-    //       ),
-    //       value: item.key,
-    //     },
-    //   },
-    // ]);
+    senderRef.current?.insert?.(`reference image: [${item.key}]`);
   };
 
   return (
@@ -488,11 +473,22 @@ export function ChatContainer() {
                       </label>
 
                       {images?.length ? (
-                        <Dropdown menu={{ onClick: imageItemClick, items: images.map(img => ({ key: img.id, label: img.content })) }}>
+                        <Dropdown menu={{
+                          onClick: imageItemClick, items: images.filter(img => img.image).map(img => ({
+                            key: img.image!.url,
+                            label: <div className='flex items-center'>
+                              <img
+                                src={img.image?.url || ''}
+                                width={40} height={40}
+                                className="rounded-[4px] object-cover mr-[5px]" />
+                              {img.image?.url || ''}
+                            </div>
+                          }))
+                        }}>
                           <Button
                             color='default'
                             variant="filled" shape='round'
-                            icon={<ProfileOutlined />}>
+                            icon={<FileImageOutlined />}>
                             图片列表
                           </Button>
                         </Dropdown>
