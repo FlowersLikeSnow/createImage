@@ -2,8 +2,8 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Attachments, AttachmentsProps, Sender } from '@ant-design/x';
-import { Button, Spin, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNumber, Menu, message, Card, GetRef, GetProp, Alert } from 'antd';
-import { CloudUploadOutlined, PaperClipOutlined } from '@ant-design/icons';
+import { Button, Spin, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNumber, Menu, message, Card, GetRef, GetProp, Alert, Dropdown, MenuProps } from 'antd';
+import { CloudUploadOutlined, PaperClipOutlined, ProfileOutlined } from '@ant-design/icons';
 import { Sparkles, Bot, Coins } from 'lucide-react';
 import { useGenerate } from '@/hooks/useGenerate';
 import { useAuth } from '@/components/auth/AuthContext';
@@ -308,6 +308,25 @@ export function ChatContainer() {
   );
 
 
+  const imageItemClick: MenuProps['onClick'] = (item) => {
+    // const { icon, label } = item;
+    // senderRef.current?.insert?.([
+    //   {
+    //     type: 'tag',
+    //     key: `${item.key}_${Date.now()}`,
+    //     props: {
+    //       label: (
+    //         <Flex gap="small">
+    //           {icon}
+    //           {label}
+    //         </Flex>
+    //       ),
+    //       value: item.key,
+    //     },
+    //   },
+    // ]);
+  };
+
   return (
     <div className="flex h-screen">
       {/* 左侧菜单列表 */}
@@ -367,7 +386,7 @@ export function ChatContainer() {
                     disabled
                     icon={<Sparkles size={12} color='#531dab' strokeWidth={1} />}>
                     充值
-                </Button>
+                  </Button>
                 </Tooltip>
               </Flex>
             </div>
@@ -383,14 +402,14 @@ export function ChatContainer() {
             AI生图
           </Typography.Title>
           <div className='flex-auto h-full px-[20px]'>
-              <Alert
-                banner
-                title={
-                  <Marquee pauseOnHover gradient={false}>
-                    ✨ AI生图助手 - 智能图片生成平台 | 支持多种尺寸、并发生成 | 💰 充值兑换在左下角「积分」按钮
-                  </Marquee>
-                }
-              />
+            <Alert
+              banner
+              title={
+                <Marquee pauseOnHover gradient={false}>
+                  ✨ AI生图助手 - 智能图片生成平台 | 支持多种尺寸、并发生成 | 💰 充值兑换在左下角「积分」按钮
+                </Marquee>
+              }
+            />
           </div>
           <UserAvatar />
         </div>
@@ -442,70 +461,81 @@ export function ChatContainer() {
                 placeholder="输入提示词描述你想要生成的图片..."
                 suffix={false}
                 autoSize={{ minRows: 4, maxRows: 8 }}
-              footer={(_, info) => {
-                const { SendButton, SpeechButton } = info.components;
-                return <Flex justify="space-between" align="center">
-                  <Flex gap="small" align="center">
-                    <Tooltip title={items?.length > 0 ? '已上传参考图片' : '上传参考图片'}>
-                      <Button shape='circle' color='purple' variant={items?.length > 0 ? 'filled' : 'text'} icon={<PaperClipOutlined />} onClick={() => setOpen(!open)} />
-                    </Tooltip>
-                    <Button
-                      color={expandLoading ? 'purple' : 'default'}
-                      variant="filled" shape='round' loading={expandLoading}
-                      icon={<Sparkles size={12} />} onClick={handleExpand}>
-                      扩写
-                    </Button>
-                    <SizeSelector value={imageSize} onChange={setImageSize} />
-                    <label className="cursor-pointer select-none">
-                      <Tag style={{
-                        borderRadius: 20,
-                        height: 30,
-                        display: 'flex',
-                        alignItems: 'center',
-                      }} color={keepPrompt ? 'purple' : '#666'} variant="filled">
-                        <Switch checked={keepPrompt} onChange={setKeepPrompt} />
-                        <div className='ml-[5px]'>保留提示词</div>
-                      </Tag>
-                    </label>
-                  </Flex>
-                  <Flex align="center">
-                    <Tooltip title={`语音输入提示词,需要给予麦克风权限`}>
-                      <SpeechButton shape='round' color='purple' />
-                    </Tooltip>
-                    <Divider orientation="vertical" />
-                    <Tooltip title={`生成${numImages}张图片,最多10张`}>
-                      <InputNumber
-                        mode="spinner"
-                        value={numImages}
-                        onChange={(value) => setNumImages(value || 1)}
-                        controls
-                        placeholder="数量"
-                        variant="filled"
-                        min={1}
-                        step={1}
-                        max={10}
-                        style={{ width: 120 }}
-                        styles={{
-                          input: {
-                            textAlign: 'center'
-                          }
-                        }}
-                      />
-                    </Tooltip>
-                    <Divider orientation="vertical" />
+                footer={(_, info) => {
+                  const { SendButton, SpeechButton } = info.components;
+                  return <Flex justify="space-between" align="center">
+                    <Flex gap="small" align="center">
+                      <Tooltip title={items?.length > 0 ? '已上传参考图片' : '上传参考图片'}>
+                        <Button shape='circle' color='purple' variant={items?.length > 0 ? 'filled' : 'text'} icon={<PaperClipOutlined />} onClick={() => setOpen(!open)} />
+                      </Tooltip>
+                      <Button
+                        color={expandLoading ? 'purple' : 'default'}
+                        variant="filled" shape='round' loading={expandLoading}
+                        icon={<Sparkles size={12} />} onClick={handleExpand}>
+                        扩写
+                      </Button>
+                      <SizeSelector value={imageSize} onChange={setImageSize} />
+                      <label className="cursor-pointer select-none">
+                        <Tag style={{
+                          borderRadius: 20,
+                          height: 30,
+                          display: 'flex',
+                          alignItems: 'center',
+                        }} color={keepPrompt ? 'purple' : '#666'} variant="filled">
+                          <Switch checked={keepPrompt} onChange={setKeepPrompt} />
+                          <div className='ml-[5px]'>保留提示词</div>
+                        </Tag>
+                      </label>
 
-                    <Tooltip placement='topRight' title={
-                      !hasEnoughCredits
-                        ? `积分不足 (当前 ${userCredits.toFixed(2)}，需要 ${requiredCredits.toFixed(2)} 积分)`
-                        : numImages === 1
-                          ? `单次生成 (预估 ${getCreditBySize(imageSize).toFixed(2)} 积分)`
-                          : `并发生成 ${numImages} 张 (预估 ${(getCreditBySize(imageSize) * numImages).toFixed(2)} 积分)`
-                    }>
-                      <SendButton disabled={isSendDisabled} />
-                    </Tooltip>
-                  </Flex>
-                </Flex>;
-              }}
+                      {images?.length ? (
+                        <Dropdown menu={{ onClick: imageItemClick, items: images.map(img => ({ key: img.id, label: img.content })) }}>
+                          <Button
+                            color='default'
+                            variant="filled" shape='round'
+                            icon={<ProfileOutlined />}>
+                            图片列表
+                          </Button>
+                        </Dropdown>
+                      ) : null}
+                    </Flex>
+                    <Flex align="center">
+                      <Tooltip title={`语音输入提示词,需要给予麦克风权限`}>
+                        <SpeechButton shape='round' color='purple' />
+                      </Tooltip>
+                      <Divider orientation="vertical" />
+                      <Tooltip title={`生成${numImages}张图片,最多10张`}>
+                        <InputNumber
+                          mode="spinner"
+                          value={numImages}
+                          onChange={(value) => setNumImages(value || 1)}
+                          controls
+                          placeholder="数量"
+                          variant="filled"
+                          min={1}
+                          step={1}
+                          max={10}
+                          style={{ width: 120 }}
+                          styles={{
+                            input: {
+                              textAlign: 'center'
+                            }
+                          }}
+                        />
+                      </Tooltip>
+                      <Divider orientation="vertical" />
+
+                      <Tooltip placement='topRight' title={
+                        !hasEnoughCredits
+                          ? `积分不足 (当前 ${userCredits.toFixed(2)}，需要 ${requiredCredits.toFixed(2)} 积分)`
+                          : numImages === 1
+                            ? `单次生成 (预估 ${getCreditBySize(imageSize).toFixed(2)} 积分)`
+                            : `并发生成 ${numImages} 张 (预估 ${(getCreditBySize(imageSize) * numImages).toFixed(2)} 积分)`
+                      }>
+                        <SendButton disabled={isSendDisabled} />
+                      </Tooltip>
+                    </Flex>
+                  </Flex>;
+                }}
               />
             )}
           </div>
