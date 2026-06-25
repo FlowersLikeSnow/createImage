@@ -61,7 +61,7 @@ export function ImageCard({ img, onDownload, onDelete, onDetails }: ImageCardPro
         ) : hasImage ? (
           <Image
             onClick={() => onDetails(img)}
-            src={img.image!.url}
+            src={img.image!.url+'-mini'}
             styles={{
               cover: {
                 backgroundColor: 'rgba(0, 0, 0, 0.15)'
