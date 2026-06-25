@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Attachments, AttachmentsProps, Sender } from '@ant-design/x';
-import { Button, Spin, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNumber, Menu, message, Card, GetRef, GetProp, Alert, Dropdown, MenuProps } from 'antd';
+import { Button, Spin, Typography, Divider, Flex, Tooltip, Tag, Switch, InputNumber, Menu, message, Card, GetRef, GetProp, Alert, Dropdown, MenuProps, Masonry } from 'antd';
 import { CloudUploadOutlined, FileImageOutlined, PaperClipOutlined, ProfileOutlined } from '@ant-design/icons';
 import { Sparkles, Bot, Coins } from 'lucide-react';
 import { useGenerate } from '@/hooks/useGenerate';
@@ -236,8 +236,13 @@ export function ChatContainer() {
       message.error('下载失败');
     }
   }, []);
+  
+  // 查看图片详情
+  const handleDetails = useCallback(async (msg: Message) => {
+    
+  }, []);
 
-  // 兑换成功后刷新用户信息
+   // 兑换成功后刷新用户信息
   const handleRedeemSuccess = useCallback(async (credits: number, totalCredits: number) => {
     message.success(`成功兑换 ${credits} 积分，当前总积分: ${totalCredits.toFixed(2)}`);
     // 立即刷新用户数据
@@ -414,15 +419,24 @@ export function ChatContainer() {
               <Typography.Text className="text-sm mt-2">支持扩写提示词、选择尺寸比例</Typography.Text>
             </div>
           ) : (
-            <div className="flex flex-wrap gap-[20px]">
-              {images.map(img => (
-                <ImageCard
-                  key={img.id}
-                  img={img}
-                  onDownload={handleDownload}
-                  onDelete={handleDelete}
-                />
-              ))}
+            <div className="w-full box-border pr-[10px] pb-[2px]">
+              <Masonry
+                columns={4}
+                gutter={4}
+                items={images.map((img) => ({
+                  key: img.id,
+                  data: img,
+                }))}
+                itemRender={({ data }) => (
+                  <ImageCard
+                    key={data.id}
+                    img={data}
+                    onDownload={handleDownload}
+                    onDelete={handleDelete}
+                    onDetails={handleDetails}
+                  />
+                )}
+              />
             </div>
           )}
         </div>
