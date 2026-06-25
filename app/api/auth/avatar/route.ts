@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth/middleware';
 import { users } from '@/lib/db/sqlite';
-import { uploadBuffer, deleteFile, extractKeyFromUrl } from '@/lib/utils/qiniu-upload';
+import { uploadBuffer, deleteFile } from '@/lib/utils/qiniu-upload';
 import { nanoid } from 'nanoid';
 
 // 用户头像上传 API
@@ -77,11 +77,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 新头像上传成功后，删除旧头像（如果有）
-    if (oldAvatar && oldAvatar.includes('QINIU_DOMAIN') || oldAvatar?.startsWith('http')) {
+    if (oldAvatar) {
       try {
-        const oldKey = extractKeyFromUrl(oldAvatar);
-        await deleteFile(oldKey);
-        console.log('[API /auth/avatar] deleted old avatar:', oldKey);
+        await deleteFile(oldAvatar);
+        console.log('[API /auth/avatar] deleted old avatar:', oldAvatar);
       } catch (deleteError) {
         // 删除失败不影响主流程，只记录日志
         console.error('[API /auth/avatar] failed to delete old avatar:', deleteError);

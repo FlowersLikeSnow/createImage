@@ -179,12 +179,12 @@ export async function downloadAndUpload(imageUrl: string, ext?: string): Promise
  */
 export async function deleteFile(key: string): Promise<boolean> {
   try {
-    // 如果传入的是完整 URL，提取 key
-    let finalKey = key;
-    if (key.startsWith('http://') || key.startsWith('https://')) {
-      const urlParts = key.split('/');
-      finalKey = urlParts[urlParts.length - 1];
-    }
+    // 如果是完整 URL，正确提取 key（包含文件夹路径）
+    const finalKey = (key.startsWith('http://') || key.startsWith('https://'))
+      ? extractKeyFromUrl(key)
+      : key;
+
+    console.log('[QiniuUpload] Deleting file:', finalKey);
 
     const mac = new qiniu.auth.digest.Mac(config.accessKey, config.secretKey);
     const bucketManager = new qiniu.rs.BucketManager(mac, createUploadConfig());
