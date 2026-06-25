@@ -49,13 +49,13 @@ export function ImageCard({ img, onDownload, onDelete, onDetails }: ImageCardPro
     <Dropdown menu={{ items, onClick }} trigger={['contextMenu']}>
       <div className='w-full'>{
         isProcessing ? (
-          <div className="h-[180px] items-center justify-center bg-gray-50"
-            style={{ display: 'flex' }}>
+          <div className="h-[180px] flex items-center justify-center bg-[rgba(0,0,0,0.15)]"
+            >
             <Spin description="正在生成..." />
           </div>
         ) : isFailed ? (
-          <div className="items-center justify-center bg-gray-50"
-            style={{ display: 'flex' }}>
+          <div className="h-[180px] flex items-center justify-center bg-[rgba(0,0,0,0.15)]"
+            >
             <Typography.Text type="danger">{img.error || '生成失败'}</Typography.Text>
           </div>
         ) : hasImage ? (
@@ -73,7 +73,7 @@ export function ImageCard({ img, onDownload, onDelete, onDetails }: ImageCardPro
               cover: (
                 <div className="w-full h-full flex flex-col items-end justify-end px-[5px]">
                   <Typography.Paragraph
-                    ellipsis={{ rows: 6 }}
+                    ellipsis={{ rows: 4 }}
                     className="text-sm !text-[#fff] !mb-[5px]"
                   >
                     {img.content || '无提示词'}
@@ -88,7 +88,7 @@ export function ImageCard({ img, onDownload, onDelete, onDetails }: ImageCardPro
             }}
           />
         ) : (
-          <div className="flex items-center justify-center bg-gray-50">
+          <div className="h-[180px] flex items-center justify-center bg-[rgba(0,0,0,0.15)]">
             <Empty description="无图片" />
           </div>
         )}
