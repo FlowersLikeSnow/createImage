@@ -1,5 +1,6 @@
 import qiniu from 'qiniu';
 import { nanoid } from 'nanoid';
+import sharp from 'sharp';
 
 // 七牛云配置
 const config = {
@@ -9,6 +10,13 @@ const config = {
   zone: process.env.QINIU_ZONE || 'z2',
   domain: process.env.QINIU_DOMAIN || '',
   folder: process.env.QINIU_FOLDER || 'GPT-Image-2', // 上传文件夹
+};
+
+// 图片压缩配置
+const COMPRESS_OPTIONS = {
+  maxWidth: 2048,
+  maxHeight: 2048,
+  quality: 82, // WebP 质量，肉眼无损
 };
 
 // 获取区域配置
@@ -30,7 +38,6 @@ function createUploadConfig(): qiniu.conf.Config {
   const cfg = new qiniu.conf.Config();
   cfg.zone = getZone();
   cfg.useHttpsDomain = false;
-  cfg.useCdnDomain = false;
   cfg.accelerateUploading = false;
   return cfg;
 }
@@ -45,19 +52,58 @@ function generateUploadToken(): string {
 }
 
 /**
- * 上传 Buffer 到七牛云
+ * 压缩图片（转 WebP 并限制尺寸）
+ * @param buffer 原始图片 Buffer
+ * @returns 压缩后的 Buffer
+ */
+async function compressImage(buffer: Buffer): Promise<Buffer> {
+  try {
+    const originalSize = buffer.length;
+
+    // 如果图片已经很小，不压缩
+    if (originalSize < 100 * 1024) { // 小于 100KB
+      return buffer;
+    }
+
+    const compressed = await sharp(buffer)
+      .resize(COMPRESS_OPTIONS.maxWidth, COMPRESS_OPTIONS.maxHeight, {
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .toFormat('webp', {
+        quality: COMPRESS_OPTIONS.quality,
+        effort: 6, // 压缩效率，0-6，越高文件越小但越慢
+      })
+      .toBuffer();
+
+    const compressedSize = compressed.length;
+    const ratio = ((1 - compressedSize / originalSize) * 100).toFixed(1);
+    console.log(`[QiniuUpload] Compressed: ${originalSize} -> ${compressedSize} bytes (${ratio}% smaller)`);
+
+    return compressed;
+  } catch (error) {
+    console.error('[QiniuUpload] Compress error, using original:', error);
+    return buffer; // 压缩失败，返回原图
+  }
+}
+
+/**
+ * 上传 Buffer 到七牛云（自动压缩）
  * @param buffer 文件 Buffer
  * @param key 文件名（可选，默认使用 nanoid 生成）
- * @param ext 文件扩展名（可选）
+ * @param ext 文件扩展名（可选，上传后统一为 .webp）
  * @returns 上传结果 { url, key }
  */
 export async function uploadBuffer(
   buffer: Buffer,
   key?: string,
-  ext?: string
+  _ext?: string
 ): Promise<{ url: string; key: string }> {
-  // 生成文件名，添加文件夹前缀
-  const fileName = key || `${nanoid(12)}${ext || '.png'}`;
+  // 压缩图片
+  const compressedBuffer = await compressImage(buffer);
+
+  // 生成文件名，添加文件夹前缀，统一使用 .webp 格式
+  const fileName = key || `${nanoid(12)}.webp`;
   const finalKey = `${config.folder}/${fileName}`;
   const token = generateUploadToken();
 
@@ -65,7 +111,7 @@ export async function uploadBuffer(
   const putExtra = new qiniu.form_up.PutExtra();
 
   return new Promise((resolve, reject) => {
-    formUploader.put(token, finalKey, buffer, putExtra, (err, body, info) => {
+    formUploader.put(token, finalKey, compressedBuffer, putExtra, (err, body, info) => {
       if (err) {
         console.error('[QiniuUpload] Upload error:', err);
         reject(err);
@@ -84,18 +130,17 @@ export async function uploadBuffer(
 }
 
 /**
- * 上传 File 到七牛云（用于 API 路由处理上传文件）
+ * 上传 File 到七牛云（用于 API 路由处理上传文件，自动压缩）
  * @param file 文件对象
  * @returns 上传结果 { url, key }
  */
 export async function uploadFile(file: File): Promise<{ url: string; key: string }> {
-  const ext = file.name.split('.').pop() || 'png';
-  const key = `${nanoid()}.${ext}`;
+  const key = `${nanoid()}.webp`;
 
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
-  return uploadBuffer(buffer, key, `.${ext}`);
+  return uploadBuffer(buffer, key);
 }
 
 /**
