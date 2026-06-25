@@ -49,12 +49,12 @@ export function SizeSelector({ value, onChange }: SizeSelectorProps) {
               <Tag style={{ borderRadius: 20 }} color="warning" variant="outlined">{CREDIT_CONFIG['2K']}积分</Tag>
               </div>
           },
-          {
-            value: '4K', label: <div className="flex items-center">
-              <div className='w-[30px] text-center'>4K</div>
-              <Tag style={{ borderRadius: 20 }} color="warning" variant="outlined">{CREDIT_CONFIG['4K']}积分</Tag>
-              </div>
-          },
+          // {
+          //   value: '4K', label: <div className="flex items-center">
+          //     <div className='w-[30px] text-center'>4K</div>
+          //     <Tag style={{ borderRadius: 20 }} color="warning" variant="outlined">{CREDIT_CONFIG['4K']}积分</Tag>
+          //     </div>
+          // },
         ]}
         style={{ width: 120 }}
         styles={{
