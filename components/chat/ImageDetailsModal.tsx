@@ -60,7 +60,7 @@ export function ImageDetailsModal({ visible, image, onClose, onDownload }: Image
         </div>
           <Divider orientation="vertical" size="large" style={{ height: '100%' }} />
         {/* 右侧：详情信息 */}
-        <div className="w-[400px] bg-white flex flex-col overflow-y-auto px-[16px] box-border">
+        <div className="w-[400px] min-w-[400px] bg-white flex flex-col overflow-y-auto px-[16px] box-border">
           {/* 头部：用户信息 */}
           <div className="pt-[10px]">
             <div className="flex items-center justify-between">
