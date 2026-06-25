@@ -15,6 +15,7 @@ import { DEFAULT_IMAGE_SIZE, getCreditBySize } from '@/lib/utils/size-config';
 import { SizeSelector } from './SizeSelector';
 import { ImageCard } from './ImageCard';
 import { ContactModal } from './ContactModal';
+import { ImageDetailsModal } from './ImageDetailsModal';
 import React from 'react';
 import Marquee from 'react-fast-marquee';
 
@@ -45,6 +46,7 @@ export function ChatContainer() {
   const [redeemModalVisible, setRedeemModalVisible] = useState(false);
   const [contactModalVisible, setContactModalVisible] = useState(false); // 客服弹窗状态
   const [items, setItems] = useState<GetProp<AttachmentsProps, 'items'>>([]);
+  const [detailsImage, setDetailsImage] = useState<Message | null>(null); // 详情弹窗图片
 
   // 计算所需积分
   const requiredCredits = getCreditBySize(imageSize) * numImages;
@@ -238,8 +240,8 @@ export function ChatContainer() {
   }, []);
   
   // 查看图片详情
-  const handleDetails = useCallback(async (msg: Message) => {
-    
+  const handleDetails = useCallback((msg: Message) => {
+    setDetailsImage(msg);
   }, []);
 
    // 兑换成功后刷新用户信息
@@ -320,7 +322,7 @@ export function ChatContainer() {
   return (
     <div className="flex h-screen">
       {/* 左侧菜单列表 */}
-      <div className="w-[160px] bg-[#F3F5F7] flex flex-col">
+      <div className="w-[160px] bg-[#F8F9FA] flex flex-col">
         {/* 顶部 AI 标识 */}
         <div className="px-[10px] py-[6px] border-gray-200">
           <Flex align="center" gap="small">
@@ -341,7 +343,7 @@ export function ChatContainer() {
             }
           }}
           items={menuItems}
-          style={{ border: 'none', background: '#F3F5F7' }}
+          style={{ border: 'none', background: '#F8F9FA' }}
           className="compact-menu"
         />
 
@@ -385,7 +387,7 @@ export function ChatContainer() {
       </div>
 
       {/* 主区域 */}
-      <div className="flex-1 flex flex-col bg-gray-100 p-[20px]">
+      <div className="flex-1 flex flex-col bg-gray-100 p-[20px] relative content-main">
         {/* 顶部标题栏 */}
         <div className="bg-gray-800 text-white px-6 py-3 flex justify-between items-center">
           <Typography.Title level={4} className="!text-white !mb-0 mt-[5px] whitespace-nowrap">
@@ -563,6 +565,14 @@ export function ChatContainer() {
       <ContactModal
         visible={contactModalVisible}
         onClose={() => setContactModalVisible(false)}
+      />
+
+      {/* 图片详情弹窗 */}
+      <ImageDetailsModal
+        visible={!!detailsImage}
+        image={detailsImage}
+        onClose={() => setDetailsImage(null)}
+        onDownload={handleDownload}
       />
     </div>
   );
