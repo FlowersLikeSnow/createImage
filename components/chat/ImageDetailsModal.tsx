@@ -54,7 +54,7 @@ export function ImageDetailsModal({ visible, image, onClose, onDownload }: Image
             onClick={onClose}
             style={{ position: 'absolute', top: 10, right: 20 }}
             size="large"
-            color="default"
+            color="danger"
             variant='filled'
           />
         </div>
