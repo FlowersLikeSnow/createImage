@@ -14,7 +14,6 @@ interface ImageCardProps {
 }
 
 export function ImageCard({ img, onDownload, onDelete, onDetails }: ImageCardProps) {
-  const [expanded, setExpanded] = useState(false);
   const isProcessing = img.status === 'processing';
   const isFailed = img.status === 'failed';
   const hasImage = !!img.image;
@@ -61,6 +60,7 @@ export function ImageCard({ img, onDownload, onDelete, onDetails }: ImageCardPro
           </div>
         ) : hasImage ? (
           <Image
+            onClick={() => onDetails(img)}
             src={img.image!.url}
             styles={{
               cover: {
