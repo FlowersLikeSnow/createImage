@@ -7,8 +7,8 @@ export function useBreakpoint() {
 
   return {
     isMobile: !screens.md,               // < 768px
-    isTablet: screens.md && !screens.xl,  // 768px – ~1200px
-    isDesktop: screens.xl,                // >= ~1200px
+    isTablet: !!screens.md && !screens.xl,  // 768px – ~1200px
+    isDesktop: !!screens.xl,                // >= ~1200px
     screens,
   };
 }
