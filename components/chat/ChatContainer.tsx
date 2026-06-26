@@ -323,15 +323,17 @@ export function ChatContainer() {
   };
 
   // 侧边栏内容（复用给桌面侧边栏和移动端抽屉）
-  const renderSidebarContent = () => (
+  const renderSidebarContent = (showLogo = true) => (
     <>
-      {/* 顶部 AI 标识 */}
-      <div className="px-[10px] py-[6px] border-gray-200">
-        <Flex align="center" gap="small">
-          <img src="/logo-64.png" alt="AI生图助手" className='w-[24px] h-[24px] rounded-[8px] shadow-md shrink-0' />
-          <Typography.Text className="text-sm font-medium">GPT-Image-2</Typography.Text>
-        </Flex>
-      </div>
+      {/* 顶部 AI 标识 - 仅在桌面端显示 */}
+      {showLogo && (
+        <div className="px-[10px] py-[6px] border-gray-200">
+          <Flex align="center" gap="small">
+            <img src="/logo-64.png" alt="AI生图助手" className='w-[24px] h-[24px] rounded-[8px] shadow-md shrink-0' />
+            <Typography.Text className="text-sm font-medium">GPT-Image-2</Typography.Text>
+          </Flex>
+        </div>
+      )}
 
       {/* 菜单 */}
       <Menu
@@ -405,10 +407,21 @@ export function ChatContainer() {
           placement="left"
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
-          styles={{ body: { padding: 0 }, wrapper: { width: 260 } }}
+          closable={{ placement: 'end' }}
+          title={
+            <Flex align="center" gap={8}>
+              <img src="/logo-64.png" alt="AI生图助手" className='w-[24px] h-[24px] rounded-[8px] shadow-md shrink-0' />
+              <Typography.Text className="text-sm font-medium">GPT-Image-2</Typography.Text>
+            </Flex>
+          }
+          styles={{
+            body: { padding: 0 },
+            wrapper: { width: 260 },
+            header: { padding: isMobile ? '8px 12px' : '12px 16px' }
+          }}
         >
           <div className="h-full flex flex-col bg-[#F8F9FA]">
-            {renderSidebarContent()}
+            {renderSidebarContent(false)}
           </div>
         </Drawer>
       )}

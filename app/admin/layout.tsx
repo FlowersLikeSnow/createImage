@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/auth/AuthContext';
 import NotFound from '@/app/not-found';
-import { Layout, Menu, Spin, Button, Drawer } from 'antd';
+import { Layout, Menu, Spin, Button, Drawer, Flex } from 'antd';
 import {
   HomeOutlined,
   GiftOutlined,
@@ -30,7 +30,7 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const { user, loading } = useAuth();
-  const { isDesktop } = useBreakpoint();
+  const { isDesktop, isMobile } = useBreakpoint();
   const [checked, setChecked] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -154,42 +154,44 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           placement="left"
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
-          styles={{ body: { padding: 0 }, wrapper: { width: 260 } }}
+          closable={{ placement: 'end' }}
+          title={
+            <Flex align="center" gap={12}>
+              <img src="/logo-64.png" alt="AI生图助手" className="w-[32px] h-[32px] rounded-[8px]" />
+              <span className="text-[15px] font-semibold text-[#333] tracking-tight">
+                管理后台
+              </span>
+            </Flex>
+          }
+          styles={{
+            body: { padding: 0 },
+            wrapper: { width: 260 },
+            header: { padding: isMobile ? '8px 12px' : '12px 16px' }
+          }}
         >
           <div className="h-full flex flex-col bg-white">
-            {/* Drawer 内的菜单项不折叠，始终显示完整 */}
-            <>
-              <div className="h-[64px] flex items-center px-[20px] border-b border-[#e8e8e8]">
-                <div className="flex items-center gap-[12px]">
-                  <img src="/logo-64.png" alt="AI生图助手" className="w-[32px] h-[32px] rounded-[8px]" />
-                  <span className="text-[15px] font-semibold text-[#333] tracking-tight">
-                    管理后台
+            <div className="flex-1 overflow-y-auto">
+              <Menu
+                mode="inline"
+                selectedKeys={[pathname]}
+                items={menuItems}
+                className="border-none mt-[12px]"
+                style={{ background: 'transparent' }}
+              />
+            </div>
+            <div className="p-[16px] border-t border-[#e8e8e8] bg-white">
+              <div className="flex items-center justify-center gap-[12px]">
+                <div className="w-[36px] h-[36px] rounded-[8px] bg-[#faad14] flex items-center justify-center">
+                  <UserOutlined className="text-white text-[14px]" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[13px] text-[#333] font-medium">
+                    {user.nickname}
                   </span>
+                  <span className="text-[11px] text-[#888]">管理员</span>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto">
-                <Menu
-                  mode="inline"
-                  selectedKeys={[pathname]}
-                  items={menuItems}
-                  className="border-none mt-[12px]"
-                  style={{ background: 'transparent' }}
-                />
-              </div>
-              <div className="p-[16px] border-t border-[#e8e8e8] bg-white">
-                <div className="flex items-center justify-center gap-[12px]">
-                  <div className="w-[36px] h-[36px] rounded-[8px] bg-[#faad14] flex items-center justify-center">
-                    <UserOutlined className="text-white text-[14px]" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[13px] text-[#333] font-medium">
-                      {user.nickname}
-                    </span>
-                    <span className="text-[11px] text-[#888]">管理员</span>
-                  </div>
-                </div>
-              </div>
-            </>
+            </div>
           </div>
         </Drawer>
       )}
