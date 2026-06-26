@@ -30,6 +30,8 @@ export function ImageDetailsModal({ visible, image, onClose, onDownload }: Image
       onClose={onClose}
       size="100%"
       getContainer=".content-main"
+      placement="left"
+      mask={false}
       styles={{
         root: { position: 'absolute', overflow: 'hidden' },
         section: { padding: 0, width: '100%', backgroundColor: '#F8F9FA' },
@@ -52,9 +54,9 @@ export function ImageDetailsModal({ visible, image, onClose, onDownload }: Image
             type="text"
             icon={<CloseOutlined style={{fontWeight: 'bold', fontSize: '20px' }} />}
             onClick={onClose}
-            style={{ position: 'absolute', top: 10, right: 20 }}
+            style={{ position: 'absolute', top: 10, right: 20, backgroundColor: 'rgba(255,255,255,0.5)' }}
             size="large"
-            color="danger"
+            color="default"
             variant='filled'
           />
         </div>
