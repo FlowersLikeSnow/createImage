@@ -586,14 +586,14 @@ export function ChatContainer() {
                           mode="spinner"
                           value={numImages}
                           onChange={(value) => setNumImages(value || 1)}
-                          controls={!isMobile}
+                          controls
                           placeholder=""
                           variant="filled"
                           min={1}
                           step={1}
                           max={10}
                           size={isMobile ? 'small' : 'middle'}
-                          style={{ width: isMobile ? 40 : 120 }}
+                          style={{ width: isMobile ? 90 : 120 }}
                           styles={{
                             input: {
                               textAlign: 'center'
