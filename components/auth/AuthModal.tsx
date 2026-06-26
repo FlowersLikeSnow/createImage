@@ -178,6 +178,7 @@ export function AuthModal() {
       footer={null}
       width="calc(100% - 32px)"
       style={{ maxWidth: 400 }}
+      centered
     >
       {/* Logo */}
       <div className="flex justify-center mb-4">

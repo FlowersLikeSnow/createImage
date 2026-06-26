@@ -89,6 +89,7 @@ export function ProfileModal() {
       footer={null}
       width="calc(100% - 32px)"
       style={{ maxWidth: 400 }}
+      centered
     >
       <Form layout="vertical" className="mt-4">
         {/* 头像编辑 */}
