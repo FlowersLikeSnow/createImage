@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button, Spin } from 'antd';
 import { GiftOutlined, CheckCircleOutlined, UserOutlined, StopOutlined } from '@ant-design/icons';
 import { fetchWithAuth } from '@/lib/api/client';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 
 interface Stats {
   total: number;
@@ -16,6 +17,7 @@ interface Stats {
 export default function AdminHomePage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const { isMobile } = useBreakpoint();
 
   useEffect(() => {
     loadStats();
@@ -79,7 +81,7 @@ export default function AdminHomePage() {
   return (
     <div className="w-full">
       {/* 统计卡片 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-[12px] md:gap-[16px] mb-[20px] md:mb-[32px]">
+      <div className="grid gap-[12px] md:gap-[16px] mb-[20px] md:mb-[32px]" style={{ gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)' }}>
         {statCards.map((stat) => (
           <div
             key={stat.key}
@@ -89,9 +91,7 @@ export default function AdminHomePage() {
               <span className="text-[12px] md:text-[13px] text-[#666] font-medium tracking-wide uppercase">
                 {stat.label}
               </span>
-              <div className="hidden md:block">
-                <stat.icon style={{ color: stat.accent, fontSize: '18px' }} />
-              </div>
+              {!isMobile && <stat.icon style={{ color: stat.accent, fontSize: '18px' }} />}
             </div>
             <div className="font-mono text-[24px] md:text-[32px] font-bold text-[#333] tracking-tight">
               {stat.value.toLocaleString()}

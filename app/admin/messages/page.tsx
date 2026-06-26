@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Table, Spin, Tag, Input, Select, Space, Button, Image, Typography } from 'antd';
 import { MessageOutlined, SearchOutlined, UserOutlined, RobotOutlined, PictureOutlined } from '@ant-design/icons';
 import { fetchWithAuth } from '@/lib/api/client';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import type { Message, MessageRole, MessageStatus, GeneratedImage } from '@/types/conversation';
 import dayjs from 'dayjs';
 
@@ -37,6 +38,7 @@ export default function MessagesAdminPage() {
   const [userIdFilter, setUserIdFilter] = useState('');
   const [roleFilter, setRoleFilter] = useState<MessageRole | ''>('');
   const [statusFilter, setStatusFilter] = useState<MessageStatus | ''>('');
+  const { isMobile } = useBreakpoint();
 
   useEffect(() => {
     loadMessages(1);
@@ -213,7 +215,7 @@ export default function MessagesAdminPage() {
   return (
     <div className="w-full">
       {/* 统计卡片 */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-[8px] md:gap-[12px] mb-[16px] md:mb-[24px]">
+      <div className="grid gap-[8px] md:gap-[12px] mb-[16px] md:mb-[24px]" style={{ gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)' }}>
         {statCards.map((stat) => (
           <div
             key={stat.key}
@@ -221,11 +223,7 @@ export default function MessagesAdminPage() {
           >
             <div className="flex items-center justify-between mb-[6px] md:mb-[8px]">
               <span className="text-[11px] md:text-[12px] text-[#666] font-medium">{stat.label}</span>
-              {stat.icon && (
-                <div className="hidden md:block">
-                  <stat.icon style={{ color: stat.accent, fontSize: '16px' }} />
-                </div>
-              )}
+              {stat.icon && !isMobile && <stat.icon style={{ color: stat.accent, fontSize: '16px' }} />}
             </div>
             <div className="font-mono text-[18px] md:text-[24px] font-bold text-[#333]">
               {stat.value}

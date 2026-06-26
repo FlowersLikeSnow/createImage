@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Table, Spin, Tag, Button, Modal, Form, InputNumber, Input, message, Space } from 'antd';
 import { UserOutlined, CrownOutlined, EditOutlined, KeyOutlined } from '@ant-design/icons';
 import { fetchWithAuth } from '@/lib/api/client';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import type { User } from '@/types/user';
 import dayjs from 'dayjs';
 
@@ -20,6 +21,7 @@ export default function UsersAdminPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [resetPasswordModalOpen, setResetPasswordModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const { isMobile } = useBreakpoint();
   const [editForm] = Form.useForm();
   const [resetPasswordForm] = Form.useForm();
 
@@ -267,7 +269,7 @@ export default function UsersAdminPage() {
   return (
     <div className="w-full">
       {/* 统计卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-[12px] md:gap-[16px] mb-[16px] md:mb-[24px]">
+      <div className="grid gap-[12px] md:gap-[16px] mb-[16px] md:mb-[24px]" style={{ gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)' }}>
         {statCards.map((stat) => (
           <div
             key={stat.key}
@@ -277,9 +279,7 @@ export default function UsersAdminPage() {
               <span className="text-[12px] md:text-[13px] text-[#666] font-medium tracking-wide uppercase">
                 {stat.label}
               </span>
-              <div className="hidden md:block">
-                <stat.icon style={{ color: stat.accent, fontSize: '18px' }} />
-              </div>
+              {!isMobile && <stat.icon style={{ color: stat.accent, fontSize: '18px' }} />}
             </div>
             <div className="font-mono text-[22px] md:text-[28px] font-bold text-[#333] tracking-tight">
               {stat.value}

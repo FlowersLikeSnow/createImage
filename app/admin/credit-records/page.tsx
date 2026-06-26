@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Table, Spin, Tag, Input, Select, Space, Button } from 'antd';
 import { TransactionOutlined, SearchOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
 import { fetchWithAuth } from '@/lib/api/client';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import type { CreditRecord, CreditRecordType, CreditRecordStats } from '@/types/credit-record';
 import { CREDIT_RECORD_TYPE_NAMES } from '@/types/credit-record';
 import dayjs from 'dayjs';
@@ -27,6 +28,7 @@ export default function CreditRecordsAdminPage() {
   const [loading, setLoading] = useState(true);
   const [userIdFilter, setUserIdFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState<CreditRecordType | ''>('');
+  const { isMobile } = useBreakpoint();
 
   useEffect(() => {
     loadRecords(1);
@@ -166,7 +168,7 @@ export default function CreditRecordsAdminPage() {
   return (
     <div className="w-full">
       {/* 统计卡片 */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-[8px] md:gap-[12px] mb-[16px] md:mb-[24px]">
+      <div className="grid gap-[8px] md:gap-[12px] mb-[16px] md:mb-[24px]" style={{ gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)' }}>
         {statCards.map((stat) => (
           <div
             key={stat.key}
@@ -174,9 +176,7 @@ export default function CreditRecordsAdminPage() {
           >
             <div className="flex items-center justify-between mb-[6px] md:mb-[8px]">
               <span className="text-[11px] md:text-[12px] text-[#666] font-medium">{stat.label}</span>
-              <div className="hidden md:block">
-                <TransactionOutlined style={{ color: stat.accent, fontSize: '16px' }} />
-              </div>
+              {!isMobile && <TransactionOutlined style={{ color: stat.accent, fontSize: '16px' }} />}
             </div>
             <div className="font-mono text-[18px] md:text-[24px] font-bold text-[#333]">
               {stat.value}
