@@ -79,19 +79,21 @@ export default function AdminHomePage() {
   return (
     <div className="w-full">
       {/* 统计卡片 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-[16px] mb-[32px]">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-[12px] md:gap-[16px] mb-[20px] md:mb-[32px]">
         {statCards.map((stat) => (
           <div
             key={stat.key}
-            className="bg-white rounded-[12px] p-[20px] border border-[#e8e8e8]"
+            className="bg-white rounded-[12px] p-[14px] md:p-[20px] border border-[#e8e8e8]"
           >
-            <div className="flex items-center justify-between mb-[16px]">
-              <span className="text-[13px] text-[#666] font-medium tracking-wide uppercase">
+            <div className="flex items-center justify-between mb-[12px] md:mb-[16px]">
+              <span className="text-[12px] md:text-[13px] text-[#666] font-medium tracking-wide uppercase">
                 {stat.label}
               </span>
-              <stat.icon style={{ color: stat.accent, fontSize: '18px' }} />
+              <div className="hidden md:block">
+                <stat.icon style={{ color: stat.accent, fontSize: '18px' }} />
+              </div>
             </div>
-            <div className="font-mono text-[32px] font-bold text-[#333] tracking-tight">
+            <div className="font-mono text-[24px] md:text-[32px] font-bold text-[#333] tracking-tight">
               {stat.value.toLocaleString()}
             </div>
           </div>

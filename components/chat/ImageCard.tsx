@@ -40,7 +40,7 @@ export function ImageCard({ img, onDownload, onDelete, onDetails }: ImageCardPro
     if (key === 'delete') {
       onDelete(img.id);
     } else if (key === 'download') {
-      onDownload(img.image!.url);
+      onDownload(img.image?.url || '');
     } else if (key === 'details') {
       onDetails(img);
     }
@@ -49,19 +49,19 @@ export function ImageCard({ img, onDownload, onDelete, onDetails }: ImageCardPro
     <Dropdown menu={{ items, onClick }} trigger={['contextMenu']}>
       <div className='w-full'>{
         isProcessing ? (
-          <div className="h-[180px] flex items-center justify-center bg-[rgba(0,0,0,0.15)]"
+          <div className="aspect-square flex items-center justify-center bg-[rgba(0,0,0,0.15)]"
             >
             <Spin description="正在生成..." />
           </div>
         ) : isFailed ? (
-          <div className="h-[180px] flex items-center justify-center bg-[rgba(0,0,0,0.15)]"
+          <div className="aspect-square flex items-center justify-center bg-[rgba(0,0,0,0.15)]"
             >
             <Typography.Text type="danger">{img.error || '生成失败'}</Typography.Text>
           </div>
         ) : hasImage ? (
           <Image
             onClick={() => onDetails(img)}
-            src={img.image!.url}
+            src={img.image?.url || ''}
             styles={{
               cover: {
                 backgroundColor: 'rgba(0, 0, 0, 0.15)'
@@ -88,7 +88,7 @@ export function ImageCard({ img, onDownload, onDelete, onDetails }: ImageCardPro
             }}
           />
         ) : (
-          <div className="h-[180px] flex items-center justify-center bg-[rgba(0,0,0,0.15)]">
+          <div className="aspect-square flex items-center justify-center bg-[rgba(0,0,0,0.15)]">
             <Empty description="无图片" />
           </div>
         )}

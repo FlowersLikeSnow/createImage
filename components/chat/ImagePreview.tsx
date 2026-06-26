@@ -2,6 +2,7 @@
 
 import { Button, Spin, Image } from 'antd';
 import { DownloadOutlined, ReloadOutlined } from '@ant-design/icons';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import type { GeneratedImage } from '@/types/conversation';
 
 interface ImagePreviewProps {
@@ -11,6 +12,8 @@ interface ImagePreviewProps {
 }
 
 export function ImagePreview({ images, onRegenerate, loading }: ImagePreviewProps) {
+  const { isMobile } = useBreakpoint();
+  const imgSize = isMobile ? 120 : 200;
   const handleDownload = async (imageUrl: string) => {
     try {
       const response = await fetch(imageUrl);
@@ -46,8 +49,8 @@ export function ImagePreview({ images, onRegenerate, loading }: ImagePreviewProp
             <Image
               src={img.url}
               alt="Generated image"
-              width={200}
-              height={200}
+              width={imgSize}
+              height={imgSize}
               className="rounded-lg"
               placeholder
             />

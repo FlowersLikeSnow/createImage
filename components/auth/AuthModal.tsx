@@ -176,7 +176,8 @@ export function AuthModal() {
       open={loginModalVisible}
       onCancel={handleCancel}
       footer={null}
-      width={400}
+      width="calc(100% - 32px)"
+      style={{ maxWidth: 400 }}
     >
       {/* Logo */}
       <div className="flex justify-center mb-4">

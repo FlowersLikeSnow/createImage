@@ -2,6 +2,7 @@
 
 import { Tag, Image } from 'antd';
 import { ImagePreview } from './ImagePreview';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import type { Message } from '@/types/conversation';
 
 interface MessageItemProps {
@@ -11,10 +12,11 @@ interface MessageItemProps {
 
 export function MessageItem({ message, onRegenerate }: MessageItemProps) {
   const isUser = message.role === 'user';
+  const { isMobile } = useBreakpoint();
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
-      <div className={`max-w-[70%] ${isUser ? 'bg-blue-100' : 'bg-gray-100'} rounded-lg p-4`}>
+      <div className={`${isMobile ? 'max-w-[90%]' : 'max-w-[70%]'} ${isUser ? 'bg-blue-100' : 'bg-gray-100'} rounded-lg p-4`}>
         {/* 状态标签 */}
         {message.status !== 'completed' && (
           <Tag color={

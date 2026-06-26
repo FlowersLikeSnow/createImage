@@ -124,7 +124,8 @@ export function RedeemModal({ visible, onClose, onSuccess }: RedeemModalProps) {
           兑换
         </Button>
       ]}
-      width={400}
+      width="calc(100% - 32px)"
+      style={{ maxWidth: 400 }}
       mask={{ closable: false }}
     >
       <div className="py-4">

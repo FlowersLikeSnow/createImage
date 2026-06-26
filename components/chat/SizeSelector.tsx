@@ -7,9 +7,10 @@ import { DEFAULT_IMAGE_SIZE, getSizesByLevel, CREDIT_CONFIG } from '@/lib/utils/
 interface SizeSelectorProps {
   value?: string;
   onChange?: (value: string) => void;
+  compact?: boolean;
 }
 
-export function SizeSelector({ value, onChange }: SizeSelectorProps) {
+export function SizeSelector({ value, onChange, compact = false }: SizeSelectorProps) {
   const [selectedSize, setSelectedSize] = useState(value || DEFAULT_IMAGE_SIZE);
   const [selectedLevel, setSelectedLevel] = useState<'1K' | '2K' | '4K'>('1K');
 
@@ -56,7 +57,8 @@ export function SizeSelector({ value, onChange }: SizeSelectorProps) {
           //     </div>
           // },
         ]}
-        style={{ width: 120 }}
+        style={{ width: compact ? 80 : 120 }}
+        size={compact ? 'small' : 'middle'}
         styles={{
           root: {
             borderRadius: '20px 0 0 20px',
@@ -74,7 +76,8 @@ export function SizeSelector({ value, onChange }: SizeSelectorProps) {
             <Tag style={{ borderRadius: 20 }} color="purple" variant="outlined">{opt.value}</Tag>
           </div>,
         }))}
-        style={{ width: 140 }}
+        style={{ width: compact ? 110 : 140 }}
+        size={compact ? 'small' : 'middle'}
         styles={{
           root: {
             borderRadius: ' 0 20px 20px 0',

@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { AntdRegistry } from '@ant-design/nextjs-registry';
-import { ConfigProvider } from 'antd';
-import zhCN from 'antd/locale/zh_CN';
 import { AuthWrapper } from '@/components/AuthWrapper';
+import { ResponsiveConfigProvider } from '@/components/ResponsiveConfigProvider';
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -49,11 +48,11 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body>
         <AntdRegistry>
-          <ConfigProvider locale={zhCN}>
+          <ResponsiveConfigProvider>
             <AuthWrapper>
               {children}
             </AuthWrapper>
-          </ConfigProvider>
+          </ResponsiveConfigProvider>
         </AntdRegistry>
       </body>
     </html>

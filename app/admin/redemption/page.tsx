@@ -280,8 +280,8 @@ export default function RedemptionAdminPage() {
   return (
     <div className="w-full flex-auto flex flex-col">
       {/* 操作栏 */}
-      <div className="flex items-center justify-between mb-[20px]">
-        <div className="flex items-center gap-[12px]">
+      <div className="flex flex-wrap items-center justify-between gap-[12px] mb-[16px] md:mb-[20px]">
+        <div className="flex flex-wrap items-center gap-[12px]">
           <Select
             placeholder="状态筛选"
             allowClear
@@ -349,6 +349,7 @@ export default function RedemptionAdminPage() {
           rowKey="id"
           loading={loading}
           rowSelection={rowSelection}
+          scroll={{ x: 1000 }}
           pagination={{
             pageSize: 20,
             showSizeChanger: true,

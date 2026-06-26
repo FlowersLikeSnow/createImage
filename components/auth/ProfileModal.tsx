@@ -87,7 +87,8 @@ export function ProfileModal() {
       open={profileModalVisible}
       onCancel={handleCancel}
       footer={null}
-      width={400}
+      width="calc(100% - 32px)"
+      style={{ maxWidth: 400 }}
     >
       <Form layout="vertical" className="mt-4">
         {/* 头像编辑 */}

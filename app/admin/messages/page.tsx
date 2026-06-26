@@ -213,17 +213,21 @@ export default function MessagesAdminPage() {
   return (
     <div className="w-full">
       {/* 统计卡片 */}
-      <div className="grid grid-cols-5 gap-[12px] mb-[24px]">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-[8px] md:gap-[12px] mb-[16px] md:mb-[24px]">
         {statCards.map((stat) => (
           <div
             key={stat.key}
-            className="bg-white rounded-[12px] p-[16px] border border-[#e8e8e8]"
+            className="bg-white rounded-[12px] p-[12px] md:p-[16px] border border-[#e8e8e8]"
           >
-            <div className="flex items-center justify-between mb-[8px]">
-              <span className="text-[12px] text-[#666] font-medium">{stat.label}</span>
-              {stat.icon && <stat.icon style={{ color: stat.accent, fontSize: '16px' }} />}
+            <div className="flex items-center justify-between mb-[6px] md:mb-[8px]">
+              <span className="text-[11px] md:text-[12px] text-[#666] font-medium">{stat.label}</span>
+              {stat.icon && (
+                <div className="hidden md:block">
+                  <stat.icon style={{ color: stat.accent, fontSize: '16px' }} />
+                </div>
+              )}
             </div>
-            <div className="font-mono text-[24px] font-bold text-[#333]">
+            <div className="font-mono text-[18px] md:text-[24px] font-bold text-[#333]">
               {stat.value}
             </div>
           </div>

@@ -2,6 +2,7 @@
 
 import { Modal, Typography, Card, Tag, Button } from 'antd';
 import { CrownOutlined, ThunderboltOutlined, RocketOutlined, GoldOutlined, TeamOutlined, StarOutlined } from '@ant-design/icons';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 
 interface ContactModalProps {
   visible: boolean;
@@ -67,22 +68,26 @@ const rechargePackages = [
 ];
 
 export function ContactModal({ visible, onClose }: ContactModalProps) {
+  const { isMobile, isTablet, isDesktop } = useBreakpoint();
+  const modalWidth = isMobile ? '95vw' : isTablet ? 700 : 900;
+  const gridCols = isMobile ? 'grid-cols-2' : isTablet ? 'grid-cols-2' : 'grid-cols-3';
+
   return (
     <Modal
       title="充值中心"
       open={visible}
       onCancel={onClose}
       footer={null}
-      width={900}
+      width={modalWidth}
       centered
     >
-      <div className="flex gap-6">
+      <div className={isMobile ? 'flex flex-col gap-6' : 'flex gap-6'}>
         {/* 左侧充值区域 */}
         <div className="flex-1">
           <Typography.Title level={5} className="!mb-4 !text-gray-600">
             选择充值套餐
           </Typography.Title>
-          <div className="grid grid-cols-3 gap-[10px]">
+          <div className={`grid ${gridCols} gap-[10px]`}>
             {rechargePackages.map(pkg => (
               <Card
                 key={pkg.key}
@@ -128,17 +133,17 @@ export function ContactModal({ visible, onClose }: ContactModalProps) {
         </div>
 
         {/* 分隔线 */}
-        <div className="w-[1px] bg-gray-200" />
+        {!isMobile && <div className="w-[1px] bg-gray-200" />}
 
         {/* 右侧客服区域 */}
-        <div className="w-[250px] flex flex-col items-center">
+        <div className={isMobile ? 'flex flex-col items-center' : 'w-[250px] flex flex-col items-center'}>
           <Typography.Title level={5} className="!mb-4 !text-gray-600">
             联系客服
           </Typography.Title>
           <img
             src="http://love.img.lijundong.cn/site/wx.png"
             alt="客服微信"
-            className="w-[200px] h-[200px] rounded-lg"
+            className={isMobile ? 'w-[150px] h-[150px] rounded-lg' : 'w-[200px] h-[200px] rounded-lg'}
           />
           <Typography.Text className="text-gray-500 mt-3 text-sm">
             扫描二维码添加客服微信

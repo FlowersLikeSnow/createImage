@@ -4,6 +4,7 @@ import { Drawer, Image, Button, Typography, Space, Tag, Divider, ConfigProvider 
 import { HeartOutlined, LikeOutlined, CopyOutlined, DownloadOutlined, CloseOutlined } from '@ant-design/icons';
 import { Message } from '@/types/conversation';
 import { useAuth } from '@/components/auth/AuthContext';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import dayjs from 'dayjs';
 
 interface ImageDetailsModalProps {
@@ -15,6 +16,7 @@ interface ImageDetailsModalProps {
 
 export function ImageDetailsModal({ visible, image, onClose, onDownload }: ImageDetailsModalProps) {
   const { user } = useAuth();
+  const { isMobile } = useBreakpoint();
 
   if (!image || !image.image) return null;
 
@@ -41,9 +43,12 @@ export function ImageDetailsModal({ visible, image, onClose, onDownload }: Image
           header: { display: 'none' }
         }}
       >
-        <div className="flex w-full h-full">
-          {/* 左侧：图片预览 */}
-          <div className="flex-auto h-full bg-gray-900 flex items-center justify-center relative overflow-hidden">
+        <div className={isMobile ? 'flex flex-col w-full h-full' : 'flex w-full h-full'}>
+          {/* 图片预览 */}
+          <div className={isMobile
+            ? 'w-full h-[45vh] bg-gray-900 flex items-center justify-center relative overflow-hidden'
+            : 'flex-auto h-full bg-gray-900 flex items-center justify-center relative overflow-hidden'
+          }>
             <Image
               src={image.image.url}
               alt="generated"
@@ -63,9 +68,16 @@ export function ImageDetailsModal({ visible, image, onClose, onDownload }: Image
               variant='filled'
             />
           </div>
-          <Divider orientation="vertical" size="large" style={{ height: '100%' }} />
-          {/* 右侧：详情信息 */}
-          <div className="w-[400px] min-w-[400px] bg-white flex flex-col overflow-y-auto px-[16px] box-border">
+          {isMobile ? (
+            <Divider size="medium" style={{ width: '100%', margin: 0 }} />
+          ) : (
+            <Divider orientation="vertical" size="large" style={{ height: '100%' }} />
+          )}
+          {/* 详情信息 */}
+          <div className={isMobile
+            ? 'w-full flex-1 bg-white flex flex-col overflow-y-auto px-[16px] box-border'
+            : 'w-[400px] min-w-[400px] bg-white flex flex-col overflow-y-auto px-[16px] box-border'
+          }>
             {/* 头部：用户信息 */}
             <div className="pt-[10px]">
               <div className="flex items-center justify-between">
