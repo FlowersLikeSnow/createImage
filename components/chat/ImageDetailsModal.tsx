@@ -39,6 +39,7 @@ export function ImageDetailsModal({ visible, image, onClose, onDownload }: Image
         mask={false}
         styles={{
           root: { position: 'absolute', overflow: 'hidden' },
+          body: { padding: isMobile ? 8 : 16 },
           section: { padding: 0, width: '100%', backgroundColor: '#F8F9FA' },
           header: { display: 'none' }
         }}
@@ -75,11 +76,11 @@ export function ImageDetailsModal({ visible, image, onClose, onDownload }: Image
           )}
           {/* 详情信息 */}
           <div className={isMobile
-            ? 'w-full flex-1 bg-white flex flex-col overflow-y-auto px-[16px] box-border'
+            ? 'w-full flex-1 bg-white flex flex-col overflow-y-auto px-[12px] box-border'
             : 'w-[400px] min-w-[400px] bg-white flex flex-col overflow-y-auto px-[16px] box-border'
           }>
             {/* 头部：用户信息 */}
-            <div className="pt-[10px]">
+            <div className={isMobile ? 'pt-[8px]' : 'pt-[10px]'}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-[32px] h-[32px] mr-[8px] rounded-full bg-[purple] flex items-center justify-center text-[white] text-sm font-medium">
@@ -97,7 +98,7 @@ export function ImageDetailsModal({ visible, image, onClose, onDownload }: Image
             </div>
             <Divider size="medium" />
             {/* 提示词区域 */}
-            <div className="p-4 flex-1">
+            <div className={isMobile ? 'p-3 flex-1' : 'p-4 flex-1'}>
               <div className="mb-3">
                 <Typography.Paragraph
                   style={{ color: '#72808A', marginBottom: '8px' }}>
