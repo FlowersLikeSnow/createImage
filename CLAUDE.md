@@ -6,6 +6,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 AI image generation web application built with Next.js 16, featuring user authentication, credit-based image generation, admin panel, and redemption code system. Chinese language UI.
 
+## Tech Stack
+
+- Next.js 16 (App Router) + React 19 + TypeScript
+- Ant Design 6 + Ant Design X 2 (chat UI)
+- Tailwind CSS 4
+- better-sqlite3 (SQLite database — native module)
+- bcryptjs (password hashing)
+- OpenAI SDK (image generation + LLM)
+- Qiniu SDK (cloud image storage)
+- big.js (credit calculations — avoid floating-point errors)
+- sharp (image compression to WebP before upload)
+
+## Path Alias
+
+`@/*` maps to the project root. Use it everywhere: `import { db } from '@/lib/db'`.
+
 ## Commands
 
 ```bash
@@ -21,37 +37,26 @@ npm run lint         # Run ESLint
 npx tsc --noEmit     # TypeScript type check
 ```
 
+**No test framework is configured.** There are no test files or test scripts.
+
 ## Architecture
 
 ### SQLite Database
 
-Persistent storage using better-sqlite3 in [lib/db/sqlite.ts](lib/db/sqlite.ts). Database file located at `data/users.db` relative to `process.cwd()`.
+Persistent storage using better-sqlite3 in [lib/db/sqlite.ts](lib/db/sqlite.ts). Database file at `data/users.db` relative to `process.cwd()`. Schema is auto-created on first run.
 
-Main entities:
-- `users` - User accounts with credits, roles, authentication, avatar
-- `sessions` - Login sessions with token expiration
-- `conversations` / `messages` - Chat history and generated images
-- `redemption_codes` - Credit redemption codes
-- `credit_records` - Credit transaction history
+Main entities: `users`, `sessions`, `conversations`, `messages`, `redemption_codes`, `credit_records`.
 
 All exports available via [lib/db/index.ts](lib/db/index.ts).
 
 ### Authentication System
 
-Located in [lib/auth/](lib/auth/):
-- `password.ts` - bcrypt password hashing (cost factor 10) and verification
-- `token.ts` - Session token generation using nanoid
+Custom Bearer token auth (not JWT). Tokens are 32-byte crypto random + nanoid, stored in `sessions` table with 7-day expiry. Located in [lib/auth/](lib/auth/):
+- `password.ts` - bcrypt hashing (cost 10)
+- `token.ts` - Session token generation
 - `middleware.ts` - `verifyAuth()` for API protection, `requireAdmin()` for admin routes
 
-API routes:
-- `/api/auth/register` - User registration with captcha verification
-- `/api/auth/login` - Login returns Bearer token
-- `/api/auth/me` - Get current user info
-- `/api/auth/logout` - Delete session
-- `/api/auth/profile` - Update nickname/avatar
-- `/api/auth/avatar` - Upload avatar to Qiniu (stored in `GPT-Image-2/users/`)
-
-Admin routes require `role === 'admin'`. Admin panel at `/admin/*` uses client-side auth check in layout.
+API routes under `/api/auth/*`: register (with captcha), login, me, logout, profile, avatar upload. Admin panel at `/admin/*` uses client-side role check in layout.
 
 ### API Client
 
@@ -71,46 +76,44 @@ Default credits on registration: 0.15 (equals 1K generation).
 
 Credit operations via `users.deductCredits()`, `users.refundCredits()`, `users.adjustCredits()`. All operations logged to `credit_records` table.
 
+**All credit calculations use `big.js`** to avoid floating-point precision errors. Always use big.js when working with credit values.
+
 ### AI Image Generation
 
-Located in [lib/ai/](lib/ai/):
-- `adapter.ts` - `ImageGenAdapter` interface
+Adapter pattern in [lib/ai/](lib/ai/):
+- `adapter.ts` - `ImageGenAdapter` interface (generate + edit)
 - `openai-gpt-image.ts` - OpenAI-compatible adapter using `NEWAPI_*` env vars
-- `index.ts` - Registry: `registerAdapter()`, `getAdapter()`, `generateImage()`
+- `index.ts` - Registry with auto-init: the default OpenAI adapter is registered on module import
 
-Hook [hooks/useGenerate.ts](hooks/useGenerate.ts) handles client-side generation calls with loading state and error handling.
+`/api/generate` handles both text-to-image and image-to-image. Hook [hooks/useGenerate.ts](hooks/useGenerate.ts) handles client-side generation calls with loading state and error handling.
+
+Prompt expansion: `/api/prompt/expand` uses a separate LLM (`LLM_*` env vars) to enhance user prompts before generation.
 
 ### Redemption Code System
 
-Admin can create redemption codes via `/api/admin/redemption`. Users redeem via `/api/redemption/redeem`. Codes have optional expiration and batch tracking.
+Admin creates redemption codes via `/api/admin/redemption`. Users redeem via `/api/redemption/redeem`. Codes have optional expiration and batch tracking.
 
 ### Admin Panel
 
-Routes under `/admin/*`:
-- `/admin` - Dashboard overview
-- `/admin/users` - User management, credit adjustment
-- `/admin/redemption` - Create/manage redemption codes
-- `/admin/credit-records` - View all credit transactions
-- `/admin/messages` - View all generated images/messages
-
-Protected by role check in [app/admin/layout.tsx](app/admin/layout.tsx).
+Routes under `/admin/*` (dashboard, users, redemption codes, credit records, messages). Protected by client-side role check in [app/admin/layout.tsx](app/admin/layout.tsx). Server-side admin routes use `requireAdmin()` middleware.
 
 ### Image Storage
 
 Images uploaded to Qiniu Cloud Storage via [lib/utils/qiniu-upload.ts](lib/utils/qiniu-upload.ts). All images stored under configured folder (default: `GPT-Image-2`).
 
-Key functions:
-- `uploadBuffer()` - Upload Buffer to Qiniu
-- `uploadFile()` - Upload File object to Qiniu
-- `downloadAndUpload()` - Download from URL and re-upload to Qiniu
-- `deleteFile()` - Delete file from Qiniu
-- `extractKeyFromUrl()` - Extract file key from full URL
+**Generated images are compressed to WebP via sharp** before upload to reduce storage and bandwidth.
+
+Key functions: `uploadBuffer()`, `uploadFile()`, `downloadAndUpload()`, `deleteFile()`, `extractKeyFromUrl()`.
 
 Image URLs use Qiniu domain format: `http://${QINIU_DOMAIN}/${folder}/${filename}`
 
 User avatars stored in `GPT-Image-2/users/` subfolder with format `users/{userId}_{timestamp}_{nanoid}.{ext}`.
 
 ## Important Notes
+
+### better-sqlite3 Native Module
+
+`better-sqlite3` is a native Node.js module. It must be listed in `serverExternalPackages` in [next.config.ts](next.config.ts) to prevent bundling issues. If you add other native packages, add them there too.
 
 ### Ant Design X Hydration Issues
 
@@ -129,7 +132,7 @@ const useMounted = () => {
 
 ### User Avatar Updates
 
-When updating user avatar via API, always return complete user object including `role` field to prevent state loss in AuthContext. Old avatar should be deleted from Qiniu after successful upload of new one.
+When updating user avatar via API, always return the complete user object including `role` field to prevent state loss in AuthContext. Old avatar should be deleted from Qiniu after successful upload of new one.
 
 ## Environment Variables
 
@@ -157,18 +160,8 @@ QINIU_FOLDER=GPT-Image-2  # Upload folder path
 
 ## Key Types
 
+- [types/ai.ts](types/ai.ts) - `GenParams`, `GenResult`, `EditParams`
 - [types/user.ts](types/user.ts) - `User`, `Session`, `UserRole`
 - [types/conversation.ts](types/conversation.ts) - `Message`, `Conversation`, `MessageStatus`
 - [types/credit-record.ts](types/credit-record.ts) - `CreditRecord`, `CreditRecordType`
 - [types/redemption.ts](types/redemption.ts) - `RedemptionCode`, `RedemptionCodeStatus`
-- [types/ai.ts](types/ai.ts) - `GenParams`, `GenResult`, `EditParams`
-
-## Tech Stack
-
-- Next.js 16 (App Router)
-- React 19 + TypeScript
-- better-sqlite3 (SQLite database)
-- bcryptjs (password hashing)
-- Ant Design X (chat UI), Ant Design 6
-- Tailwind CSS 4
-- OpenAI SDK
